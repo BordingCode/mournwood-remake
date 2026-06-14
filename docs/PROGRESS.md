@@ -19,8 +19,16 @@
 - NOTE: portraits/icons use emoji for now (render on iOS/Android; blank on Linux test browser). Woodcut art replaces them in M5.
 - ⬜ commit/push + enable Pages + add to Hub  (in progress)
 
-## Milestone 2 — One region + node map + economy  ⬜
-(node map, rewards 1-of-3/skip, gold, trader+removal, camp+upgrade, relics, curses, save/resume, Wealdedge boss)
+## Milestone 2 — One region + node map + economy  ✅ DONE
+- ✅ run.js: branching node-map (random-walk DAG, 321 headless checks) + run state + save/resume (localStorage 'mw_save_v1')
+- ✅ ui/map.js: scrollable branching map (SVG edges), reachable-node glow, tap to travel, top HUD (hp/gold/relics/deck)
+- ✅ relics.js (12) + relic hooks wired into combat (combatStart/turnStart/onDeath/onApplyStatus/modBlock/modAttack/houndAtk/postCombatHeal/glutton); gold economy
+- ✅ ui/nodes.js: card reward (1-of-3/skip), Trader (buy card/relic, remove card, gold-gated), Camp (heal/upgrade), 4 Omen events, Cache, deck viewer
+- ✅ card upgrades ('+' variants via instantiate) + 2 curse cards via greedy choices
+- ✅ depth-scaled encounters; elites/hunts drop relics; Wealdedge → Briar Mother boss → victory (save cleared)
+- ✅ main.js = run orchestrator; auto-save after every node; resume via "Continue the Hunt"
+- ✅ browser-playtested full run end-to-end (phone): map, all node types, economy, relics, curses, save/resume, boss/victory — 0 console errors
+- NOTE: still emoji portraits/icons (woodcut art = M5). Only region 0 (Wealdedge) so far.
 
 ## Milestone 3 — Pacts + Assassin + Tinker  ⬜
 ## Milestone 4 — Regions 2 & 3 + great-beast bosses  ⬜

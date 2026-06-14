@@ -193,7 +193,7 @@ export class CombatScreen {
     ov.innerHTML = `<div class="endpanel">
       <h1 style="color:${result === 'win' ? '#9be38b' : '#ff6b6b'}">${result === 'win' ? 'PREY FELLED' : 'THE WOOD TAKES YOU'}</h1>
       <p>${result === 'win' ? 'The beast lies still. The hunt goes on.' : 'Your hunt ends here in the dark.'}</p>
-      <button class="again">Hunt again</button></div>`;
+      <button class="again">${result === 'win' ? 'Continue ▸' : 'Accept your fate'}</button></div>`;
     ov.querySelector('.again').onclick = () => { ov.remove(); this.audio.stopMusic(); this.onEnd && this.onEnd(result, this.combat); };
     this.root.append(ov);
   }

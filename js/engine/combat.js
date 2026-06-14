@@ -3,6 +3,7 @@
 import { instantiate } from '../data/cards.js';
 import { makeEnemy, rollIntent, advanceBoss } from '../data/enemies.js';
 import { amt, has, addStatus, decayTurnEnd, STATUSES } from './statuses.js';
+import { RELICS } from '../data/relics.js';
 
 const NOOP = () => {};
 
@@ -23,9 +24,11 @@ export class Combat {
       maxHp: player.maxHp, hp: player.hp ?? player.maxHp,
       block: 0, energy: 0, statuses: { ...(player.statuses || {}) },
     };
+    this.relics = (player.relics || []).slice();
+    const houndBonus = this.relics.reduce((s, id) => s + (RELICS[id]?.houndAtk || 0), 0);
     this.hound = hound
       ? { isHound: true, name: hound.name || 'Hound', maxHp: hound.maxHp, hp: hound.hp ?? hound.maxHp,
-          atk: hound.atk, block: 0, statuses: {}, alive: true }
+          atk: hound.atk + houndBonus, block: 0, statuses: {}, alive: true }
       : null;
 
     this.enemies = enemyIds.map((id) => makeEnemy(rng, id));
@@ -44,6 +47,8 @@ export class Combat {
     this.tickDot(this.player);
     if (this.checkOver()) return;
     this.player.energy = this.maxEnergy;
+    if (this.turn === 1) this.relicHook('combatStart');
+    this.relicHook('turnStart');
     this.draw(this.handSize);
     this.h.onTurnStart({ who: 'player', turn: this.turn });
   }
@@ -133,7 +138,7 @@ export class Combat {
         else tgts = [target].filter(Boolean);
         for (const t of tgts) {
           const base = op.fromTargetStatus ? (op.fromTargetStatus.per * amt(t, op.fromTargetStatus.status)) : this.resolveVal(op.amount);
-          for (let i = 0; i < times && t.hp > 0; i++) this.attack(this.player, t, base, { tag: card.tag });
+          for (let i = 0; i < times && t.hp > 0; i++) this.attack(this.player, t, base, { tag: card.tag, isCard: true });
         }
         break;
       }
@@ -151,7 +156,8 @@ export class Combat {
       }
       case 'break': if (target) { target.armor = Math.max(0, (target.armor || 0) - op.amount); this.h.onBreak({ target }); } break;
       case 'feedHound': if (this.hound) {
-        if (op.atk) this.hound.atk += op.atk;
+        const glut = this.relics.includes('glutton_totem') ? 2 : 0;
+        if (op.atk) this.hound.atk += op.atk + glut;
         if (op.hp) { this.hound.maxHp += op.hp; this.hound.hp += op.hp; }
         this.hound.alive = this.hound.hp > 0;
         this.h.onHoundGrow({ hound: this.hound, fed: true });
@@ -193,6 +199,7 @@ export class Combat {
     if (has(target, 'vulnerable')) d = Math.floor(d * 1.5);
     // The Hunt: matching a monster's weakness deals +50%.
     if (opts.tag && target.weakTo && opts.tag === target.weakTo) d = Math.floor(d * 1.5);
+    if (attacker === this.player) d = this.relicMod('modAttack', d, opts);
     return Math.max(0, Math.round(d));
   }
 
@@ -201,7 +208,7 @@ export class Combat {
     const dmg = this.computeDamage(attacker, target, base, opts);
     const dealt = this.applyDamage(target, dmg, attacker, { attack: true });
     this.h.onDamage({ target, amount: dealt, attacker, weak: opts.tag && target.weakTo === opts.tag });
-    if (target.hp <= 0) this.h.onDeath({ target });
+    if (target.hp <= 0) { this.h.onDeath({ target }); this.relicHook('onDeath', target); }
     return dealt;
   }
 
@@ -215,6 +222,7 @@ export class Combat {
   }
 
   gainBlock(e, base) {
+    if (e === this.player) base = this.relicMod('modBlock', base);
     const b = Math.max(0, base);
     e.block += b;
     this.h.onBlock({ entity: e, amount: b });
@@ -222,7 +230,10 @@ export class Combat {
   }
 
   heal(e, n) { e.hp = Math.min(e.maxHp, e.hp + n); this.h.onHeal({ entity: e, amount: n }); }
-  applyStatus(e, id, n) { addStatus(e, id, n); this.h.onStatus({ entity: e, id, amount: n }); }
+  applyStatus(e, id, n) { addStatus(e, id, n); this.h.onStatus({ entity: e, id, amount: n }); this.relicHook('onApplyStatus', e, id, n); }
+
+  relicHook(name, ...args) { for (const id of this.relics) { const fn = RELICS[id]?.hooks?.[name]; if (fn) fn(this, ...args); } }
+  relicMod(name, value, ...args) { for (const id of this.relics) { const fn = RELICS[id]?.hooks?.[name]; if (fn) value = fn(this, value, ...args); } return value; }
 
   tickDot(e) {
     const b = amt(e, 'bleed');
