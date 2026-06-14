@@ -1,6 +1,8 @@
 // Run state: a branching node map (random-walk DAG), encounter selection, and save/resume.
 import { makeRng } from '../engine/rng.js';
 import { HUNTERS } from '../data/hunters.js';
+import { PACTS } from '../data/pacts.js';
+import { RELIC_POOL } from '../data/relics.js';
 
 const W = 4, H = 11, PATHS = 6;        // map width, content rows, number of random-walk paths
 const SAVE_KEY = 'mw_save_v1';
@@ -55,14 +57,20 @@ export function generateMap(rng) {
   return { rows: H, nodes, starts: Object.values(nodes).filter((n) => n.r === 0).map((n) => n.id) };
 }
 
-export function makeRun({ hunterId = 'houndmaster', region = 0, seed } = {}) {
+export function makeRun({ hunterId = 'houndmaster', pactId = null, region = 0, seed } = {}) {
   const h = HUNTERS[hunterId];
+  const pact = pactId ? PACTS[pactId] : null;
   const s = seed != null ? seed : ((Date.now() & 0xffffff) ^ 0x5a5a);
   const rng = makeRng(s + region * 7777);
+  // per-run offering pools = hunter pool/relics + the chosen Pact's mini-set
+  const cardPool = h.pool.concat(pact ? pact.cards : []);
+  const relicPool = RELIC_POOL.concat(pact ? pact.relics.concat(pact.startRelic ? [pact.startRelic] : []) : []);
+  const startRelics = pact && pact.startRelic ? [pact.startRelic] : [];
   return {
-    seed: s, hunterId, region,
-    player: { name: h.name, maxHp: h.maxHp, hp: h.maxHp, gold: 50, deck: h.startDeck.slice(), relics: [] },
-    hound: { name: h.hound.name, maxHp: h.hound.maxHp, atk: h.hound.atk },
+    seed: s, hunterId, pactId, region,
+    player: { name: h.name, maxHp: h.maxHp, hp: h.maxHp, gold: 50, deck: h.startDeck.slice(), relics: startRelics },
+    hound: h.hound ? { name: h.hound.name, maxHp: h.hound.maxHp, atk: h.hound.atk } : null,
+    cardPool, relicPool,
     map: generateMap(rng), node: null, cleared: [],
   };
 }

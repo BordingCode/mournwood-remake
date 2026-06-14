@@ -35,6 +35,40 @@ export const RELICS = {
   thorn_fetish: { id: 'thorn_fetish', name: 'Thorn Fetish', rarity: 'rare', icon: '🌵',
                   desc: 'Whenever you apply Bleed, apply 1 more.',
                   hooks: { onApplyStatus: (c, e, id) => { if (id === 'bleed' && !c._thornGuard) { c._thornGuard = true; c.applyStatus(e, 'bleed', 1); c._thornGuard = false; } } } },
+
+  // ----- Pact relics (only enter a run's pool if you took that Pact) -----
+  rot_sigil:    { id: 'rot_sigil', name: 'Rot Sigil', rarity: 'pact', icon: '🟢', pact: 'worm',
+                  desc: 'Combat start: apply 1 Rot to all foes.',
+                  hooks: { combatStart: (c) => c.livingEnemies().forEach((e) => c.applyStatus(e, 'poison', 1)) } },
+  plague_censer:{ id: 'plague_censer', name: 'Plague Censer', rarity: 'pact', icon: '⚱️', pact: 'worm',
+                  desc: 'Whenever you apply Rot, apply 1 more.',
+                  hooks: { onApplyStatus: (c, e, id) => { if (id === 'poison' && !c._rotGuard) { c._rotGuard = true; c.applyStatus(e, 'poison', 1); c._rotGuard = false; } } } },
+  iron_carapace:{ id: 'iron_carapace', name: 'Iron Carapace', rarity: 'pact', icon: '🛡️', pact: 'iron',
+                  desc: 'Combat start: gain 8 Block.',
+                  hooks: { combatStart: (c) => c.gainBlock(c.player, 8) } },
+  barbed_hide:  { id: 'barbed_hide', name: 'Barbed Hide', rarity: 'pact', icon: '🌵', pact: 'iron',
+                  desc: 'Combat start: gain 2 Thorns.',
+                  hooks: { combatStart: (c) => c.applyStatus(c.player, 'thorns', 2) } },
+  lunar_fang:   { id: 'lunar_fang', name: 'Lunar Fang', rarity: 'pact', icon: '🌙', pact: 'moon',
+                  desc: 'Combat start: gain 2 Strength.',
+                  hooks: { combatStart: (c) => c.applyStatus(c.player, 'strength', 2) } },
+  bloodlust:    { id: 'bloodlust', name: 'Bloodlust', rarity: 'pact', icon: '🥩', pact: 'moon',
+                  desc: 'Whenever an enemy dies, heal 3 HP.',
+                  hooks: { onDeath: (c) => c.heal(c.player, 3) } },
+  ember_heart:  { id: 'ember_heart', name: 'Ember Heart', rarity: 'pact', icon: '🔥', pact: 'ash',
+                  desc: 'Combat start: lose 3 HP, gain 2 Strength.',
+                  hooks: { combatStart: (c) => { c.applyDamage(c.player, 3, null); c.applyStatus(c.player, 'strength', 2); } } },
+  cinder_brand: { id: 'cinder_brand', name: 'Cinder Brand', rarity: 'pact', icon: '🩸', pact: 'ash',
+                  desc: 'Your Fire attacks deal +3 damage.',
+                  hooks: { modAttack: (c, dmg, opts) => (opts.tag === 'fire' ? dmg + 3 : dmg) } },
+  smoke_bomb:   { id: 'smoke_bomb', name: 'Smoke Bomb', rarity: 'pact', icon: '🌫️', pact: 'mist',
+                  desc: 'Combat start: apply 2 Weak to all foes.',
+                  hooks: { combatStart: (c) => c.livingEnemies().forEach((e) => c.applyStatus(e, 'weak', 2)) } },
+  ghost_step:   { id: 'ghost_step', name: 'Ghost Step', rarity: 'pact', icon: '👣', pact: 'mist',
+                  desc: 'At the start of your turn, gain 3 Block.',
+                  hooks: { turnStart: (c) => c.gainBlock(c.player, 3) } },
 };
 
-export const RELIC_POOL = Object.keys(RELICS);
+// The general relic pool (shops/caches/elite drops) — pact relics are EXCLUDED; they only enter
+// a run's pool when that Pact is chosen (see makeRun → run.relicPool).
+export const RELIC_POOL = Object.keys(RELICS).filter((id) => RELICS[id].rarity !== 'pact');

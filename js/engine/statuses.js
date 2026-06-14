@@ -12,6 +12,10 @@ export const STATUSES = {
                 desc: 'Each Attack you play makes the Hound +X stronger this fight.' },
   regen:      { name: 'Regen',      icon: '🌿', kind: 'buff', dot: true,
                 desc: 'Heals X at the start of its turn, then X drops by 1.' },
+  poison:     { name: 'Rot',        icon: '🧪', kind: 'debuff', dot: true,
+                desc: 'Loses X HP at the start of its turn, then X drops by 1. (the Worm Pact)' },
+  thorns:     { name: 'Thorns',     icon: '🌵', kind: 'buff',
+                desc: 'When struck, deals X back to the attacker. (the Iron Pact)' },
 };
 
 export const amt = (e, id) => (e && e.statuses && e.statuses[id]) || 0;

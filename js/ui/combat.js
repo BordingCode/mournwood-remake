@@ -3,7 +3,7 @@
 import { Combat } from '../engine/combat.js';
 import { STATUSES } from '../engine/statuses.js';
 
-const TAG = { bleed: { i: '🩸', n: 'Bleed' }, fire: { i: '🔥', n: 'Fire' }, blunt: { i: '🔨', n: 'Blunt' }, beast: { i: '🐾', n: 'Beast' } };
+const TAG = { bleed: { i: '🩸', n: 'Bleed' }, fire: { i: '🔥', n: 'Fire' }, blunt: { i: '🔨', n: 'Blunt' }, beast: { i: '🐾', n: 'Beast' }, machine: { i: '⚙️', n: 'Machine' } };
 const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
 
 export class CombatScreen {
@@ -39,6 +39,8 @@ export class CombatScreen {
       onHoundGrow: ({ fed }) => { this.audio.growl(); if (this.houndEl) { this.pulse(this.houndEl); this.float(this.houndEl, fed ? 'FED' : '+1', 'flt heal'); } },
       onHoundDown: () => { this.audio.hurt(); this.shakeScreen(); },
       onHoundRevive: () => { this.audio.growl(); },
+      onDeploy: ({ c }) => { this.audio.growl(); this.toast(`${c.icon} ${c.name} deployed — it acts every turn.`, 1800); },
+      onContraption: ({ c }) => { const node = this.contraptionEls && this.contraptionEls.get(c); if (node) this.pulse(node); },
       onBossPhase: ({ line }) => this.toast(line, 2600),
       onEnd: ({ result }) => { this.audio.fanfare(result === 'win'); setTimeout(() => this.showEnd(result), 700); },
     };
@@ -91,6 +93,18 @@ export class CombatScreen {
       this.houndEl.onclick = (e) => { e.stopPropagation(); this.toast('Hound — strikes at end of turn. ⚔ is its attack. Feed it to grow it; Mend revives it.', 2800); };
       this.elAllies.append(this.houndEl);
     }
+    // Tinker contraptions (live engine objects so juice hooks can find their node)
+    this.contraptionEls = new Map();
+    if (this.combat.contraptions.length) {
+      const strip = el('div', 'contraptions');
+      this.combat.contraptions.forEach((c) => {
+        const node = el('div', 'contraption k-' + c.kind, `<span class="cgic">${c.icon}</span><b>${c.name}</b><span class="cgval">${c.value}</span>`);
+        node.onclick = (e) => { e.stopPropagation(); this.toast(`${c.icon} ${c.name} — acts every turn on its own (${c.kind === 'attack' ? 'strikes ' + c.value : c.kind === 'block' ? '+' + c.value + ' Block' : c.kind === 'strength' ? '+' + c.value + ' Strength' : '+' + c.value + ' Bleed'}).`, 2600); };
+        this.contraptionEls.set(c, node); strip.append(node);
+      });
+      this.elAllies.append(strip);
+    }
+
     this.playerEl = el('div', 'player');
     const p = s.player;
     this.playerEl.innerHTML = `<div class="por">🏹</div><div class="meta"><b>Hunter</b>
@@ -102,6 +116,7 @@ export class CombatScreen {
     let pips = '';
     for (let i = 0; i < p.maxEnergy; i++) pips += `<span class="pip${i < p.energy ? ' on' : ''}"></span>`;
     this.elHud.innerHTML = `<div class="energy">${pips}<span class="elabel">${p.energy}/${p.maxEnergy}</span></div>
+      ${s.cardsThisTurn > 0 ? `<div class="combo">⚡ Combo ×${s.cardsThisTurn}</div>` : ''}
       <div class="piles">🂠 ${s.piles.draw} · 🗑 ${s.piles.discard}</div>`;
 
     // hand

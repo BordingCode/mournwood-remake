@@ -1,10 +1,11 @@
 # Mournwood (remake) — Progress Log
 
-> ▶ **RESUME HERE → Milestone 3: Pacts + the Assassin & Tinker hunters.**
-> M1 (core combat) and M2 (full run loop: map, economy, relics, curses, save/resume, boss)
-> are DONE, committed, pushed, and live at https://bordingcode.github.io/mournwood-remake/.
-> To continue: read DESIGN.md (§3 hunters, §Pacts) + the M3 checklist below, then build the
-> Assassin (Combo) & Tinker (Contraptions) hunters and the Hunter+Pact run-variety system.
+> ▶ **RESUME HERE → Milestone 4: Regions 2 & 3 (the Sloughfen & the Blackheart) + their great-beast bosses.**
+> M1 (combat), M2 (run loop), and M3 (Pacts + Assassin + Tinker) are DONE, committed, pushed,
+> and live at https://bordingcode.github.io/mournwood-remake/.
+> To continue M4: add region 1 & 2 enemy sets + a multi-phase boss each (mirror briarmother),
+> wire region progression (run.region → new map + enemy pools + boss) in run.js/main.js, and
+> a between-regions screen. Then M5 (meta: unlocks, Ascension, art, audio, polish).
 
 > Resume here if the session drops. Read this + `DESIGN.md` first.
 > Location: `~/CC/mournwood-remake` · Repo: BordingCode/mournwood-remake · Live: (Pages, TBD)
@@ -36,7 +37,24 @@
 - ✅ browser-playtested full run end-to-end (phone): map, all node types, economy, relics, curses, save/resume, boss/victory — 0 console errors
 - NOTE: still emoji portraits/icons (woodcut art = M5). Only region 0 (Wealdedge) so far.
 
-## Milestone 3 — Pacts + Assassin + Tinker  ⬜
+## Milestone 3 — Pacts + Assassin + Tinker  ✅ DONE
+- ✅ Engine extensions (combat.js): **contraptions** (deploy op + tickContraptions each player turn:
+  turret=attack weakest, grinder=Block, bellows=Strength, needler=Bleed), **combo** (`if` conditions
+  combo≥N / firstCard / hasContraption; `perCombo` already; `perContraption` in resolveVal),
+  **poison/Rot** dot + **thorns** retaliate. Snapshot adds contraptions + cardsThisTurn.
+- ✅ **Assassin** (Combo Chains, 62 HP): cheap 0/1-cost chain cards (nick/dart/shadowstep/momentum) that
+  pump perCombo finishers (eviscerate/coupdegrace/whirl) and combo-gated hits (assassinate/twinfang/ambush).
+- ✅ **Tinker** (Contraptions, 66 HP): deploy turret/grinder/bellows/needler/heavy-turret; overclock/overdrive
+  fuel & burst; scrapblast/reinforce scale per contraption. No hound; the machine is the defense.
+- ✅ **Pacts** (data/pacts.js): Worm(Rot) · Iron(Thorns) · Moon(frenzy) · Ash(sacrifice) · Mist(stealth).
+  Each merges 3 cards + 1 pool relic into the run + grants a start relic. 3 hunters × 5 pacts = 15 builds.
+  Pact relics excluded from the general pool (only enter a run if you took that pact).
+- ✅ Run/UI: title → **choose Hunter → swear Pact** → map. run.js builds per-run cardPool+relicPool+signature
+  (hound only for Houndmaster). Combat UI: contraptions strip + combo readout; hound hidden when none.
+- ✅ Tests: 27 headless checks incl. combo/contraption/poison/thorns + a 90-run hunter×pact fuzzer (0 crashes).
+- ✅ Browser-verified (phone viewport): selection flow, Assassin combo ×3 + Worm poison-on-start, Tinker turret
+  auto-fires + Iron 8-block start, Houndmaster+Moon hound + Lunar Fang strength — 0 console errors. SW→v4.
+- NOTE: still emoji portraits/icons (woodcut art = M5; blank on Linux test browser, fine on iOS/Android).
 ## Milestone 4 — Regions 2 & 3 + great-beast bosses  ⬜
 ## Milestone 5 — Meta (unlocks, Ascension, art-on-every-card, full audio, polish, Hub)  ⬜
 

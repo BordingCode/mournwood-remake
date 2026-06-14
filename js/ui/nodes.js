@@ -7,8 +7,8 @@ import { makeRng } from '../engine/rng.js';
 const PRICE = { card: 48, relic: 130, remove: 55 };
 function screen(root, cls, html) { root.innerHTML = ''; const s = document.createElement('div'); s.className = 'screen node ' + cls; s.innerHTML = html; root.append(s); return s; }
 function rngFor(run, salt) { return makeRng(run.seed + run.cleared.length * 1000 + salt); }
-function poolFor(run) { return HUNTERS[run.hunterId].pool; }
-function unownedRelics(run, rng, n) { return rng.shuffle(RELIC_POOL.filter((id) => !run.player.relics.includes(id))).slice(0, n); }
+function poolFor(run) { return run.cardPool || HUNTERS[run.hunterId].pool; }
+function unownedRelics(run, rng, n) { return rng.shuffle((run.relicPool || RELIC_POOL).filter((id) => !run.player.relics.includes(id))).slice(0, n); }
 
 export function cardHtml(spec, extra = '') {
   const up = spec.endsWith('+'); const c = CARDS[up ? spec.slice(0, -1) : spec];
@@ -103,17 +103,20 @@ const EVENTS = [
     ] },
   { title: 'The Wounded Stag', text: 'A great stag lies broken in the bracken, breathing its last.',
     choices: [
-      { label: 'Feed it to the Hound', desc: 'Hound +3 attack (permanent)', apply: (run) => { run.hound.atk += 3; } },
+      { label: 'Feed it to the Hound', desc: 'Hound +3 attack (permanent)', need: 'hound', apply: (run) => { run.hound.atk += 3; } },
+      { label: 'Carve the carcass', desc: 'Gain 30 teeth', need: 'nohound', apply: (run) => { run.player.gold += 30; } },
       { label: 'A clean mercy', desc: 'Heal 16 HP', apply: (run) => { run.player.hp = Math.min(run.player.maxHp, run.player.hp + 16); } },
     ] },
 ];
 export function eventScreen(root, run, audio, onDone) {
   const rng = rngFor(run, 23);
   const ev = rng.pick(EVENTS);
+  // hide choices that need a hound the run doesn't have (and vice-versa)
+  const choices = ev.choices.filter((ch) => !ch.need || (ch.need === 'hound' ? !!run.hound : !run.hound));
   const s = screen(root, 'event', `<h2>${ev.title}</h2><p class="story">${ev.text}</p>
-    <div class="choices">${ev.choices.map((ch, i) => `<button class="choice" data-i="${i}">${ch.label}<small>${ch.desc}</small></button>`).join('')}</div>`);
+    <div class="choices">${choices.map((ch, i) => `<button class="choice" data-i="${i}">${ch.label}<small>${ch.desc}</small></button>`).join('')}</div>`);
   s.querySelectorAll('.choice').forEach((b) => b.onclick = () => {
-    const ch = ev.choices[+b.dataset.i]; ch.apply(run, rng); audio.card();
+    const ch = choices[+b.dataset.i]; ch.apply(run, rng); audio.card();
     s.innerHTML = `<h2>${ev.title}</h2><p class="story">${ch.desc} — done.</p><button class="big2 cont">Onward</button>`;
     s.querySelector('.cont').onclick = () => onDone();
   });

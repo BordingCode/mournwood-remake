@@ -1,6 +1,6 @@
 // Combat engine — pure, DOM-free, deterministic (RNG injected). Op-based cards (from the
 // proven old engine) + NEW: the Hunt weakness/armor system and the Houndmaster's bond-fed Hound.
-import { instantiate } from '../data/cards.js';
+import { instantiate, CONTRAPTIONS } from '../data/cards.js';
 import { makeEnemy, rollIntent, advanceBoss } from '../data/enemies.js';
 import { amt, has, addStatus, decayTurnEnd, STATUSES } from './statuses.js';
 import { RELICS } from '../data/relics.js';
@@ -34,6 +34,7 @@ export class Combat {
     this.enemies = enemyIds.map((id) => makeEnemy(rng, id));
     this.drawPile = rng.shuffle((player.deck || []).map(instantiate));
     this.hand = []; this.discardPile = []; this.exhaustPile = [];
+    this.contraptions = []; // Tinker's persistent devices — tick every player turn
   }
 
   /* ---------------- lifecycle ---------------- */
@@ -49,8 +50,24 @@ export class Combat {
     this.player.energy = this.maxEnergy;
     if (this.turn === 1) this.relicHook('combatStart');
     this.relicHook('turnStart');
+    this.tickContraptions();           // the machine runs at the top of your turn
+    if (this.checkOver()) return;
     this.draw(this.handSize);
     this.h.onTurnStart({ who: 'player', turn: this.turn });
+  }
+
+  // Tinker contraptions act on their own each player turn (turret/grinder/bellows/needler).
+  tickContraptions() {
+    for (const c of this.contraptions) {
+      if (this.over) return;
+      if (c.kind === 'attack') {
+        const liv = this.livingEnemies();
+        if (liv.length) { const t = liv.reduce((a, b) => (b.hp < a.hp ? b : a)); this.h.onContraption({ c, target: t }); this.attack(this.player, t, c.value, { tag: 'machine', isCard: false }); }
+      } else if (c.kind === 'block') { this.h.onContraption({ c }); this.gainBlock(this.player, c.value); }
+      else if (c.kind === 'strength') { this.h.onContraption({ c }); this.applyStatus(this.player, 'strength', c.value); }
+      else if (c.kind === 'bleed') { const liv = this.livingEnemies(); if (liv.length) { const t = this.rng.pick(liv); this.h.onContraption({ c, target: t }); this.applyStatus(t, 'bleed', c.value); } }
+      this.checkOver();
+    }
   }
 
   endTurn() {
@@ -171,7 +188,18 @@ export class Combat {
         if (!this.hound.alive && this.hound.hp > 0) { this.hound.alive = true; this.h.onHoundRevive({ hound: this.hound }); }
         else this.h.onHeal({ entity: this.hound, amount: op.amount });
       } break;
+      case 'deploy': {
+        const base = CONTRAPTIONS[op.dep]; if (!base) break;
+        const c = { dep: op.dep, name: base.name, icon: base.icon, kind: base.kind, value: this.resolveVal(op.value) };
+        this.contraptions.push(c); this.h.onDeploy({ c });
+        break;
+      }
+      case 'overdrive': this.tickContraptions(); break;
       case 'if': {
+        // combo conditions (Assassin): cardsThisTurn includes the card being played
+        if (op.combo) { if (this.cardsThisTurn >= op.combo) [].concat(op.then).forEach((o) => this.runOp(o, card, target)); break; }
+        if (op.firstCard) { if (this.cardsThisTurn <= 1) [].concat(op.then).forEach((o) => this.runOp(o, card, target)); break; }
+        if (op.hasContraption) { if (this.contraptions.length > 0) [].concat(op.then).forEach((o) => this.runOp(o, card, target)); break; }
         const e = op.on === 'self' ? this.player : (op.on === 'hound' ? this.hound : target);
         const cur = !e ? 0 : (op.status === 'block' ? (e.block || 0) : amt(e, op.status));
         if (cur >= (op.atLeast || 1)) [].concat(op.then).forEach((o) => this.runOp(o, card, target));
@@ -187,6 +215,7 @@ export class Combat {
       let v = spec.base || 0;
       if (spec.scale) v += (spec.scale.per || 1) * amt(this.player, spec.scale.stat);
       if (spec.perCombo) v += spec.perCombo * this.cardsThisTurn;
+      if (spec.perContraption) v += spec.perContraption * this.contraptions.length;
       return Math.max(0, Math.floor(v));
     }
     return 0;
@@ -238,6 +267,8 @@ export class Combat {
   tickDot(e) {
     const b = amt(e, 'bleed');
     if (b > 0) { this.applyDamage(e, b, null); addStatus(e, 'bleed', -1); this.h.onDamage({ target: e, amount: b, dot: 'bleed' }); }
+    const p = amt(e, 'poison');
+    if (p > 0) { this.applyDamage(e, p, null); addStatus(e, 'poison', -1); this.h.onDamage({ target: e, amount: p, dot: 'poison' }); }
     const r = amt(e, 'regen');
     if (r > 0) { this.heal(e, r); addStatus(e, 'regen', -1); }
   }
@@ -266,6 +297,12 @@ export class Combat {
     d = Math.max(0, d);
     const dealt = this.applyDamage(target, d, e, { attack: true });
     this.h.onDamage({ target, amount: dealt, attacker: e });
+    // Thorns (Iron Pact): the player retaliates when struck.
+    if (target.isPlayer && dealt > 0 && has(this.player, 'thorns') && e.hp > 0) {
+      const th = amt(this.player, 'thorns');
+      this.applyDamage(e, th, this.player); this.h.onDamage({ target: e, amount: th, dot: 'thorns' });
+      if (e.hp <= 0) { this.h.onDeath({ target: e }); this.relicHook('onDeath', e); }
+    }
     if (target.isHound && target.hp <= 0 && target.alive) { target.alive = false; this.h.onHoundDown({ hound: target }); }
   }
 
@@ -284,6 +321,7 @@ export class Combat {
       turn: this.turn, over: this.over, result: this.result, cardsThisTurn: this.cardsThisTurn,
       player: { hp: this.player.hp, maxHp: this.player.maxHp, block: this.player.block, energy: this.player.energy, maxEnergy: this.maxEnergy, statuses: { ...this.player.statuses } },
       hound: this.hound ? { name: this.hound.name, hp: this.hound.hp, maxHp: this.hound.maxHp, atk: this.hound.atk, alive: this.hound.alive } : null,
+      contraptions: this.contraptions.map((c) => ({ dep: c.dep, name: c.name, icon: c.icon, kind: c.kind, value: c.value })),
       enemies: this.enemies.map((e) => ({ uid: e.uid, id: e.id, name: e.name, emoji: e.emoji, hp: e.hp, maxHp: e.maxHp, block: e.block, armor: e.armor || 0, weakTo: e.weakTo, statuses: { ...e.statuses }, intent: e.intent, boss: !!e.boss, elite: !!e.elite })),
       hand: this.hand.map((c) => ({ uid: c.uid, id: c.id, name: c.name, cost: c.cost, type: c.type, target: c.target, tag: c.tag, text: c.text, exhaust: c.exhaust })),
       piles: { draw: this.drawPile.length, discard: this.discardPile.length, exhaust: this.exhaustPile.length },
