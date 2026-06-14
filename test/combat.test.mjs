@@ -3,7 +3,8 @@ import { Combat } from '../js/engine/combat.js';
 import { makeRng } from '../js/engine/rng.js';
 import { HUNTERS } from '../js/data/hunters.js';
 import { PACTS, PACT_IDS } from '../js/data/pacts.js';
-import { makeRun } from '../js/game/run.js';
+import { makeRun, REGIONS } from '../js/game/run.js';
+import { ENEMIES } from '../js/data/enemies.js';
 import { amt, addStatus } from '../js/engine/statuses.js';
 
 let pass = 0, fail = 0;
@@ -167,6 +168,41 @@ function runCombatFor(hunterId, pactId, enemyIds, seed = 1) {
   }
   ok(`hunter×pact fuzzer: no crashes in ${games} runs`, crashes === 0);
   ok('hunter×pact fuzzer: all terminate', stuck === 0);
+}
+
+// 11b. All region enemies/bosses are defined and resolve; bosses are multi-phase.
+{
+  let allDefined = true, bossesMulti = true;
+  for (const R of REGIONS) {
+    for (const id of [...R.pool, R.elite, R.boss, ...R.hunts.flat()]) if (!ENEMIES[id]) { allDefined = false; console.log('   missing enemy:', id); }
+    if (!(ENEMIES[R.boss]?.phases?.length >= 2)) bossesMulti = false;
+  }
+  ok('all region enemy ids exist', allDefined);
+  ok('every region boss is multi-phase', bossesMulti);
+}
+
+// 11c. Region fuzzer: every region's pool + boss, across hunters, no crashes / all terminate.
+{
+  let crashes = 0, stuck = 0, games = 0;
+  for (let ri = 0; ri < REGIONS.length; ri++) {
+    const R = REGIONS[ri];
+    const sets = [[R.boss], R.pool.slice(0, 2), [R.elite]];
+    for (const hid of ['houndmaster', 'assassin', 'tinker']) for (let si = 0; si < sets.length; si++) for (let s = 0; s < 3; s++) {
+      games++;
+      try {
+        const c = runCombatFor(hid, PACT_IDS[(ri + si) % PACT_IDS.length], sets[si], ri * 100 + si * 17 + s + 3);
+        let guard = 0;
+        while (!c.over && guard++ < 800) {
+          const playable = c.hand.filter((card) => !card.unplayable && card.cost <= c.player.energy);
+          if (playable.length && c.rng.chance(0.85)) { const card = c.rng.pick(playable); const tgt = card.target === 'enemy' ? c.rng.pick(c.livingEnemies()) : null; c.play(card.uid, tgt ? tgt.uid : null); }
+          else c.endTurn();
+        }
+        if (!c.over) stuck++;
+      } catch (err) { crashes++; if (crashes <= 3) console.log('   region fuzz error:', R.name, hid, err.message); }
+    }
+  }
+  ok(`region fuzzer: no crashes in ${games} runs`, crashes === 0);
+  ok('region fuzzer: all terminate', stuck === 0);
 }
 
 // 12. Legacy fuzzer: random valid plays never crash and combats terminate.

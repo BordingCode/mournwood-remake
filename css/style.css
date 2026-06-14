@@ -13,7 +13,7 @@ button { font-family: inherit; cursor: pointer; }
 .screen { position: absolute; inset: 0; display: flex; flex-direction: column; }
 
 /* ---------- title / overlays ---------- */
-.screen.title, .screen.over, .screen.reward {
+.screen.title, .screen.over, .screen.reward, .screen.regiontrans {
   align-items: center; justify-content: center; text-align: center; padding: 24px;
   background:
     radial-gradient(120% 80% at 50% 0%, #16210f 0%, transparent 60%),

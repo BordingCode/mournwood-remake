@@ -80,15 +80,38 @@ export function reachable(run) {
   return (run.map.nodes[run.node]?.next || []).map((id) => run.map.nodes[id]).filter(Boolean);
 }
 
+// The three regions of the descent: green edge → sinking mire → corrupted heart.
+export const REGIONS = [
+  { name: 'Wealdedge', sub: 'the green, human-touched edge',
+    pool: ['thornwretch', 'gloomwolf', 'bonehusk', 'mireling'], elite: 'hollowstag', boss: 'briarmother',
+    hunts: [['gloomwolf', 'bonehusk'], ['hollowstag'], ['gloomwolf', 'gloomwolf']] },
+  { name: 'The Sloughfen', sub: 'the sinking mire',
+    pool: ['bogleech', 'drowned', 'gasbloat', 'fenstalker'], elite: 'mirewidow', boss: 'fenmaw',
+    hunts: [['fenstalker', 'gasbloat'], ['mirewidow'], ['drowned', 'bogleech']] },
+  { name: 'The Blackheart', sub: 'the corrupted inner wood',
+    pool: ['gloomspawn', 'rotpriest', 'thornhorror', 'direwolf'], elite: 'antleredpenance', boss: 'heartrot',
+    hunts: [['direwolf', 'gloomspawn'], ['antleredpenance'], ['thornhorror', 'rotpriest']] },
+];
+export const REGION_COUNT = REGIONS.length;
+
 export function enemyIdsFor(run, node) {
+  const R = REGIONS[run.region] || REGIONS[0];
   const rng = makeRng(run.seed + node.r * 131 + node.c * 17 + run.region * 999);
-  if (node.type === NODE.boss) return ['briarmother'];
-  if (node.type === NODE.elite) return ['hollowstag'];
-  if (node.type === NODE.hunt) return rng.pick([['gloomwolf', 'bonehusk'], ['hollowstag'], ['gloomwolf', 'gloomwolf']]);
-  const pool = ['thornwretch', 'gloomwolf', 'bonehusk', 'mireling'];
+  if (node.type === NODE.boss) return [R.boss];
+  if (node.type === NODE.elite) return [R.elite];
+  if (node.type === NODE.hunt) return rng.pick(R.hunts);
   const count = node.r <= 2 ? 1 : node.r <= 6 ? (rng.chance(0.35) ? 2 : 1) : 2;
-  const out = []; for (let i = 0; i < count; i++) out.push(rng.pick(pool));
+  const out = []; for (let i = 0; i < count; i++) out.push(rng.pick(R.pool));
   return out;
+}
+
+// Descend to the next region: fresh map, same hunter/deck/relics/hp carry over.
+export function advanceRegion(run) {
+  run.region++;
+  const rng = makeRng(run.seed + run.region * 7777);
+  run.map = generateMap(rng);
+  run.node = null; run.cleared = []; run._shopBought = null;
+  return run;
 }
 
 /* ---------------- save / resume ---------------- */

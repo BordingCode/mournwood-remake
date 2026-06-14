@@ -4,7 +4,7 @@ import { CombatScreen } from './ui/combat.js';
 import { Audio } from './ui/audio.js';
 import { renderMap } from './ui/map.js';
 import { rewardScreen, campScreen, shopScreen, eventScreen, cacheScreen, deckOverlay } from './ui/nodes.js';
-import { makeRun, loadRun, saveRun, clearSave, enemyIdsFor, reachable, NODE } from './game/run.js';
+import { makeRun, loadRun, saveRun, clearSave, enemyIdsFor, reachable, advanceRegion, REGIONS, REGION_COUNT, NODE } from './game/run.js';
 import { RELICS, RELIC_POOL } from './data/relics.js';
 import { HUNTERS } from './data/hunters.js';
 import { PACTS, PACT_IDS } from './data/pacts.js';
@@ -29,7 +29,7 @@ function title() {
       Read your prey, feed your hound, and cut a path to the dark.</p>
       ${saved ? '<button class="big continue">Continue the Hunt</button>' : ''}
       <button class="big ${saved ? 'ghostbig' : ''} newrun">${saved ? 'Abandon &amp; start anew' : 'Begin the Hunt'}</button>
-      <p class="m1note">Milestone 3 · 3 Hunters × 5 Pacts · Wealdedge — the branching wood</p>
+      <p class="m1note">Milestone 4 · 3 Hunters × 5 Pacts · 3 regions to the Blackheart</p>
     </div>`);
   s.querySelector('.newrun').onclick = () => { audio.resume(); clearSave(); chooseHunter(); };
   if (saved) s.querySelector('.continue').onclick = () => { audio.resume(); run = saved; showMap(); };
@@ -117,7 +117,7 @@ function startCombat(node) {
     // post-combat heals (e.g. Bloodstone)
     run.player.relics.forEach((id) => { const h = RELICS[id]?.postCombatHeal; if (h) run.player.hp = Math.min(run.player.maxHp, run.player.hp + h); });
     saveRun(run);
-    if (node.type === NODE.boss) return victory();
+    if (node.type === NODE.boss) return (run.region >= REGION_COUNT - 1) ? victory() : regionTransition();
     if (gotRelic) toastThen(`Relic claimed: ${RELICS[gotRelic].icon} ${RELICS[gotRelic].name} (+${gold} teeth)`, () => rewardScreen(root, run, audio, afterNode));
     else rewardScreen(root, run, audio, afterNode);
   });
@@ -128,13 +128,38 @@ function toastThen(msg, next) {
   s.querySelector('.go').onclick = next;
 }
 
+/* ---------------- between regions ---------------- */
+const REGION_INTRO = [
+  '', // entering region 0 has no transition
+  'The Briar Mother falls, and Wealdedge is yours. The ground softens to black water underfoot — you wade down into <b>The Sloughfen</b>.',
+  'The Fen-Maw chokes on its own mire. Ahead the trees blacken and weep sap like old blood — the <b>Blackheart</b> is close now.',
+];
+function regionTransition() {
+  audio.fanfare(true);
+  const next = run.region + 1;
+  const heal = Math.ceil(run.player.maxHp * 0.4);
+  run.player.hp = Math.min(run.player.maxHp, run.player.hp + heal);
+  // a relic for felling a great-beast
+  const rng = makeRng(run.seed + run.region * 313 + 99);
+  const gotRelic = grantRelic(rng);
+  advanceRegion(run); saveRun(run);
+  const r = REGIONS[next];
+  const s = screen('node regiontrans', `<div class="titlewrap">
+    <div class="logo small">${r.name}</div>
+    <p class="sub">${r.sub}</p>
+    <p class="blurb">${REGION_INTRO[next] || ''}</p>
+    <p class="m1note">You bind your wounds (+${heal} HP)${gotRelic ? ` and claim ${RELICS[gotRelic].icon} ${RELICS[gotRelic].name}` : ''}.</p>
+    <button class="big go">Descend ▾</button></div>`);
+  s.querySelector('.go').onclick = () => showMap();
+}
+
 /* ---------------- end states ---------------- */
 function victory() {
   clearSave(); audio.fanfare(true);
   const s = screen('over win', `<div class="titlewrap">
-    <div class="logo small">THE BRIAR MOTHER FALLS</div>
-    <p class="blurb">Wealdedge is yours. The wood holds its breath — and deeper dark waits below.</p>
-    <p class="m1note">Milestone 3 complete: 3 Hunters (Houndmaster · Assassin · Tinker) × 5 Pacts.<br>Next (M4): the Sloughfen &amp; the Blackheart — two new regions and their great-beasts.</p>
+    <div class="logo small">THE HEART-ROT IS UNMADE</div>
+    <p class="blurb">The corruption at the wood's heart goes still at last. Mournwood will live — and so, against all odds, will you. The hunt is over.</p>
+    <p class="m1note">You descended all three regions: Wealdedge · The Sloughfen · The Blackheart.<br>Milestone 4 complete. Next (M5): unlocks, the Ascension ladder, woodcut art &amp; music.</p>
     <button class="big newrun">Hunt again</button></div>`);
   s.querySelector('.newrun').onclick = () => title();
 }

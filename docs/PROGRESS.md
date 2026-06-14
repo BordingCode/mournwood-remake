@@ -1,11 +1,11 @@
 # Mournwood (remake) — Progress Log
 
-> ▶ **RESUME HERE → Milestone 4: Regions 2 & 3 (the Sloughfen & the Blackheart) + their great-beast bosses.**
-> M1 (combat), M2 (run loop), and M3 (Pacts + Assassin + Tinker) are DONE, committed, pushed,
-> and live at https://bordingcode.github.io/mournwood-remake/.
-> To continue M4: add region 1 & 2 enemy sets + a multi-phase boss each (mirror briarmother),
-> wire region progression (run.region → new map + enemy pools + boss) in run.js/main.js, and
-> a between-regions screen. Then M5 (meta: unlocks, Ascension, art, audio, polish).
+> ▶ **RESUME HERE → Milestone 5 (final): meta — unlocks, the "Hunt Deepens" Ascension ladder,
+> woodcut art on every card (replace emoji), full CC0 music/SFX pass, and a polish/onboarding/Codex pass.**
+> M1–M4 are DONE, committed, pushed, live at https://bordingcode.github.io/mournwood-remake/.
+> The game is now a COMPLETE 3-region run (Wealdedge → Sloughfen → Blackheart) with 3 hunters × 5 pacts.
+> For M5: persistent meta-save (separate from the run save), unlock gates, Ascension modifiers applied at
+> makeRun, an art pipeline (per-card images w/ typographic fallback), and a keyword Codex screen.
 
 > Resume here if the session drops. Read this + `DESIGN.md` first.
 > Location: `~/CC/mournwood-remake` · Repo: BordingCode/mournwood-remake · Live: (Pages, TBD)
@@ -55,7 +55,20 @@
 - ✅ Browser-verified (phone viewport): selection flow, Assassin combo ×3 + Worm poison-on-start, Tinker turret
   auto-fires + Iron 8-block start, Houndmaster+Moon hound + Lunar Fang strength — 0 console errors. SW→v4.
 - NOTE: still emoji portraits/icons (woodcut art = M5; blank on Linux test browser, fine on iOS/Android).
-## Milestone 4 — Regions 2 & 3 + great-beast bosses  ⬜
+## Milestone 4 — Regions 2 & 3 + great-beast bosses  ✅ DONE
+- ✅ enemies.js: **Sloughfen** set (bogleech/drowned/gasbloat/fenstalker + spiderling, elite Mire Widow w/ summon,
+  boss **The Fen-Maw** 3-phase) and **Blackheart** set (gloomspawn/rotpriest/thornhorror/direwolf, elite Antlered
+  Penance, boss **The Heart-Rot** 3-phase). Swamp/dark monsters apply Rot (poison) to the hunter — uses the M3 status.
+- ✅ run.js: **REGIONS** table (pool/elite/boss/hunts per region) + region-aware `enemyIdsFor` + `advanceRegion`
+  (fresh map, carry hp/deck/relics/gold). REGION_COUNT exported.
+- ✅ main.js: after a non-final region boss → **regionTransition** (heal 40% + a relic + flavor intro → Descend);
+  after the final (Blackheart) boss → real victory. Title/victory text updated for the 3-region descent.
+- ✅ map.js already labels the region name (Wealdedge / The Sloughfen / The Blackheart).
+- ✅ Tests: 31 headless checks incl. region fuzzer (every region pool+boss×3 hunters) + boss-multiphase assertions.
+- ✅ Browser-verified the FULL descent end-to-end (phone viewport, fresh port to avoid SW cache): r0 Briar Mother →
+  Sloughfen (fenstalker, Fen-Maw) → Blackheart (direwolf, Heart-Rot) → "THE HEART-ROT IS UNMADE" — 0 errors. SW→v5.
+- GOTCHA (re)confirmed: an old service worker serves stale modules on the same host:port during dev — test on a
+  NEW port (or fully unregister+clear+double-reload). The live deploy's SW bump handles real users.
 ## Milestone 5 — Meta (unlocks, Ascension, art-on-every-card, full audio, polish, Hub)  ⬜
 
 ## Key decisions snapshot (full detail in DESIGN.md)
