@@ -1,0 +1,11 @@
+{
+  "name": "Mournwood",
+  "short_name": "Mournwood",
+  "description": "A grim monster-hunter roguelike deckbuilder. Read your prey, feed your hound, cut to the dark heart of the wood.",
+  "start_url": "./index.html",
+  "display": "fullscreen",
+  "orientation": "portrait",
+  "background_color": "#0b0e0b",
+  "theme_color": "#0c0f0c",
+  "icons": [{ "src": "./icon.svg", "sizes": "any", "type": "image/svg+xml" }]
+}

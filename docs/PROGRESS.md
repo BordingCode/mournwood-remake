@@ -6,15 +6,18 @@
 
 ## Status legend: ⬜ todo · 🔧 doing · ✅ done
 
-## Milestone 1 — Core combat that feels great
+## Milestone 1 — Core combat that feels great  ✅ DONE
 - ✅ Project scaffold (folders, git, .nojekyll)
 - ✅ DESIGN.md + PROGRESS.md committed
-- 🔧 engine: rng.js, statuses.js, intents/enemies, combat.js (op system + Hunt/weakness + hound + combo + contraptions)
-- ⬜ data: Houndmaster cards, a few Act-1 enemies w/ weaknesses, 1 elite
-- ⬜ UI: combat screen (phone portrait), card hand, enemy intents, tap-to-inspect, HUD
-- ⬜ juice + audio (SFX + a music bed)
-- ⬜ headless combat test (node)
-- ⬜ browser playtest + screenshot, commit/push, enable Pages
+- ✅ engine: rng.js, statuses.js, enemies.js (intents+weakness), combat.js (op system + Hunt/weakness + bond-fed hound)
+- ✅ data: Houndmaster (10-card starter + 9-card pool), 4 Act-1 enemies + 1 elite + multi-phase boss, all with weaknesses/armor
+- ✅ UI: phone-portrait combat screen, card hand, telegraphed intents (color-coded), tap-to-inspect toasts, HUD
+- ✅ juice (floats/shake/pulse/screenshake) + procedural audio (SFX + dark ambient bed)
+- ✅ headless combat test (node test/combat.test.mjs — 13 checks incl 80-run fuzzer)
+- ✅ browser-playtested (phone viewport): Hunt/weakness, hound bond/feed, synergy, win/reward/next, boss weakness-shift, lose path — 0 console errors
+- ✅ M1 boot = 5-fight gauntlet (intro → bleed/armor/elite → Briar Mother boss) with card pick between fights
+- NOTE: portraits/icons use emoji for now (render on iOS/Android; blank on Linux test browser). Woodcut art replaces them in M5.
+- ⬜ commit/push + enable Pages + add to Hub  (in progress)
 
 ## Milestone 2 — One region + node map + economy  ⬜
 (node map, rewards 1-of-3/skip, gold, trader+removal, camp+upgrade, relics, curses, save/resume, Wealdedge boss)
