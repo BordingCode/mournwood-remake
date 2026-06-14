@@ -3,7 +3,7 @@ import { Combat } from '../js/engine/combat.js';
 import { makeRng } from '../js/engine/rng.js';
 import { HUNTERS } from '../js/data/hunters.js';
 import { PACTS, PACT_IDS } from '../js/data/pacts.js';
-import { makeRun, REGIONS } from '../js/game/run.js';
+import { makeRun, REGIONS, ascensionMods } from '../js/game/run.js';
 import { ENEMIES } from '../js/data/enemies.js';
 import { amt, addStatus } from '../js/engine/statuses.js';
 
@@ -203,6 +203,23 @@ function runCombatFor(hunterId, pactId, enemyIds, seed = 1) {
   }
   ok(`region fuzzer: no crashes in ${games} runs`, crashes === 0);
   ok('region fuzzer: all terminate', stuck === 0);
+}
+
+// 11d. Ascension modifiers scale enemies, add menace, curses, and reduce heal/gold.
+{
+  ok('A0 is a no-op', ascensionMods(0).enemyHpMul === 1 && ascensionMods(0).startCurses === 0 && ascensionMods(0).healMul === 1);
+  ok('A1 raises enemy HP', ascensionMods(1).enemyHpMul > 1);
+  ok('A2 lowers healing', ascensionMods(2).healMul < 1);
+  ok('A3 gives elites/bosses Strength', ascensionMods(3).eliteBossStr === 2);
+  ok('A4 adds a starting curse', ascensionMods(4).startCurses === 1);
+  ok('A5 adds enemy Strength + less gold', ascensionMods(5).allEnemyStr === 1 && ascensionMods(5).goldMul < 1);
+  // applied in combat (same seed → same base roll)
+  const mk = (mods) => new Combat({ rng: makeRng(5), player: { name: 'x', maxHp: 60, deck: ['nick'] }, hound: null, enemyIds: ['gloomwolf'], mods }).start();
+  ok('A1 enemy is hardier than A0', mk(ascensionMods(1)).enemies[0].maxHp > mk(ascensionMods(0)).enemies[0].maxHp);
+  const bossA3 = new Combat({ rng: makeRng(9), player: { name: 'x', maxHp: 60, deck: ['nick'] }, hound: null, enemyIds: ['briarmother'], mods: ascensionMods(3) }).start();
+  ok('A3 boss starts with Strength', amt(bossA3.enemies[0], 'strength') >= 2);
+  const runA4 = makeRun({ hunterId: 'assassin', pactId: 'mist', ascension: 4, seed: 1 });
+  ok('A4 run starts with a curse in the deck', runA4.player.deck.includes('ashdoubt'));
 }
 
 // 12. Legacy fuzzer: random valid plays never crash and combats terminate.

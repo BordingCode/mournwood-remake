@@ -8,10 +8,11 @@ import { RELICS } from '../data/relics.js';
 const NOOP = () => {};
 
 export class Combat {
-  constructor({ rng, player, enemyIds, hound = null, handSize = 5, energy = 3, hooks = {} }) {
+  constructor({ rng, player, enemyIds, hound = null, handSize = 5, energy = 3, hooks = {}, mods = {} }) {
     this.rng = rng;
     this.handSize = handSize;
     this.maxEnergy = energy;
+    this.mods = mods || {};
     this.h = new Proxy(hooks, { get: (t, k) => t[k] || NOOP });
 
     this.turn = 0;
@@ -32,9 +33,18 @@ export class Combat {
       : null;
 
     this.enemies = enemyIds.map((id) => makeEnemy(rng, id));
+    this.enemies.forEach((e) => this.applyEnemyMods(e));
     this.drawPile = rng.shuffle((player.deck || []).map(instantiate));
     this.hand = []; this.discardPile = []; this.exhaustPile = [];
     this.contraptions = []; // Tinker's persistent devices — tick every player turn
+  }
+
+  // Ascension modifiers: tougher prey, deadlier prey, elite/boss menace.
+  applyEnemyMods(e) {
+    const m = this.mods;
+    if (m.enemyHpMul && m.enemyHpMul !== 1) { e.maxHp = Math.max(1, Math.round(e.maxHp * m.enemyHpMul)); e.hp = e.maxHp; }
+    const str = (m.allEnemyStr || 0) + ((e.boss || e.elite) ? (m.eliteBossStr || 0) : 0);
+    if (str) addStatus(e, 'strength', str);
   }
 
   /* ---------------- lifecycle ---------------- */
@@ -286,7 +296,7 @@ export class Combat {
     else if (it.type === 'buff') this.applyStatus(e, it.status, it.amount);
     else if (it.type === 'debuff') this.applyStatus(this.player, it.status, it.amount);
     else if (it.type === 'ramp') { e.rampStacks = Math.min((e.rampStacks || 0) + 1, it.max || 5); this.applyStatus(e, 'strength', (it.amount || 1) + (e.rampStacks - 1)); }
-    else if (it.type === 'summon') { let room = (it.cap || 4) - this.livingEnemies().length; for (let i = 0; i < times && room > 0; i++, room--) { const ne = makeEnemy(this.rng, it.summonId); this.enemies.push(ne); this.h.onSummon({ enemy: ne }); } }
+    else if (it.type === 'summon') { let room = (it.cap || 4) - this.livingEnemies().length; for (let i = 0; i < times && room > 0; i++, room--) { const ne = makeEnemy(this.rng, it.summonId); this.applyEnemyMods(ne); this.enemies.push(ne); this.h.onSummon({ enemy: ne }); } }
     else if (it.type === 'charge') { e.forcedNext = { moveId: it.releaseId || 'unleash', type: 'attack', amount: it.amount, times: it.times || 1 }; }
   }
 

@@ -32,7 +32,7 @@ export function rewardScreen(root, run, audio, onDone) {
 
 /* ---------------- camp / rest ---------------- */
 export function campScreen(root, run, audio, onDone) {
-  const heal = Math.ceil(run.player.maxHp * 0.3);
+  const heal = Math.ceil(run.player.maxHp * 0.3 * (run.mods?.healMul ?? 1));
   const s = screen(root, 'camp', `<h2>🔥 Camp</h2><p class="sub">The fire burns low. Rest, or sharpen a blade.</p>
     <div class="campopts">
       <button class="campbtn rest">Rest<small>Heal ${heal} HP</small></button>
@@ -43,7 +43,7 @@ export function campScreen(root, run, audio, onDone) {
 }
 function upgradeChooser(root, run, audio, onDone) {
   const idxs = run.player.deck.map((sp, i) => ({ sp, i })).filter((x) => canUpgrade(x.sp));
-  if (!idxs.length) { run.player.hp = Math.min(run.player.maxHp, run.player.hp + Math.ceil(run.player.maxHp * 0.3)); onDone(); return; }
+  if (!idxs.length) { run.player.hp = Math.min(run.player.maxHp, run.player.hp + Math.ceil(run.player.maxHp * 0.3 * (run.mods?.healMul ?? 1))); onDone(); return; }
   const s = screen(root, 'camp', `<h2>Sharpen a card</h2><p class="sub">Tap a card to upgrade it.</p>
     <div class="cardrow wrap">${idxs.map((x) => cardHtml(x.sp, `<div class="up">→ ${(CARDS[x.sp].up.text)}</div>`).replace('data-spec="' + x.sp + '"', 'data-i="' + x.i + '"')).join('')}</div>
     <button class="ghost back">Back</button>`);

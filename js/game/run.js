@@ -57,7 +57,26 @@ export function generateMap(rng) {
   return { rows: H, nodes, starts: Object.values(nodes).filter((n) => n.r === 0).map((n) => n.id) };
 }
 
-export function makeRun({ hunterId = 'houndmaster', pactId = null, region = 0, seed } = {}) {
+// ---- Ascension: "The Hunt Deepens" — fair, fixed modifiers (no rubber-banding). ----
+export const ASCENSIONS = [
+  { lvl: 0, name: 'The Hunt', desc: 'The standard descent.' },
+  { lvl: 1, name: 'Deepening I', desc: 'Prey are hardier — +15% enemy HP.' },
+  { lvl: 2, name: 'Deepening II', desc: 'Wounds knit slower — all healing −33%.' },
+  { lvl: 3, name: 'Deepening III', desc: 'Elites & great-beasts start with +2 Strength.' },
+  { lvl: 4, name: 'Deepening IV', desc: 'You begin the hunt with a Curse in your deck.' },
+  { lvl: 5, name: 'Deepening V', desc: 'All prey are deadlier (+1 Strength) and give 20% less gold.' },
+];
+export function ascensionMods(lvl) {
+  const m = { enemyHpMul: 1, healMul: 1, eliteBossStr: 0, allEnemyStr: 0, startCurses: 0, goldMul: 1 };
+  if (lvl >= 1) m.enemyHpMul *= 1.15;
+  if (lvl >= 2) m.healMul *= 0.67;
+  if (lvl >= 3) m.eliteBossStr += 2;
+  if (lvl >= 4) m.startCurses += 1;
+  if (lvl >= 5) { m.allEnemyStr += 1; m.goldMul *= 0.8; }
+  return m;
+}
+
+export function makeRun({ hunterId = 'houndmaster', pactId = null, region = 0, ascension = 0, seed } = {}) {
   const h = HUNTERS[hunterId];
   const pact = pactId ? PACTS[pactId] : null;
   const s = seed != null ? seed : ((Date.now() & 0xffffff) ^ 0x5a5a);
@@ -66,14 +85,23 @@ export function makeRun({ hunterId = 'houndmaster', pactId = null, region = 0, s
   const cardPool = h.pool.concat(pact ? pact.cards : []);
   const relicPool = RELIC_POOL.concat(pact ? pact.relics.concat(pact.startRelic ? [pact.startRelic] : []) : []);
   const startRelics = pact && pact.startRelic ? [pact.startRelic] : [];
+  const mods = ascensionMods(ascension);
+  const deck = h.startDeck.slice();
+  for (let i = 0; i < mods.startCurses; i++) deck.push('ashdoubt'); // Ascension IV+: a curse in the pack
   return {
-    seed: s, hunterId, pactId, region,
-    player: { name: h.name, maxHp: h.maxHp, hp: h.maxHp, gold: 50, deck: h.startDeck.slice(), relics: startRelics },
+    seed: s, hunterId, pactId, region, ascension, mods,
+    player: { name: h.name, maxHp: h.maxHp, hp: h.maxHp, gold: 50, deck, relics: startRelics },
     hound: h.hound ? { name: h.hound.name, maxHp: h.hound.maxHp, atk: h.hound.atk } : null,
     cardPool, relicPool,
     map: generateMap(rng), node: null, cleared: [],
   };
 }
+
+/* ---------------- meta-progression (persists across runs) ---------------- */
+const META_KEY = 'mw_meta_v1';
+const defaultMeta = () => ({ runs: 0, wins: 0, maxAscension: 0, bossesFelled: 0, hunterWins: {} });
+export function loadMeta() { try { return Object.assign(defaultMeta(), JSON.parse(localStorage.getItem(META_KEY)) || {}); } catch (e) { return defaultMeta(); } }
+export function saveMeta(m) { try { localStorage.setItem(META_KEY, JSON.stringify(m)); } catch (e) {} }
 
 export function reachable(run) {
   if (!run.node) return run.map.starts.map((id) => run.map.nodes[id]);

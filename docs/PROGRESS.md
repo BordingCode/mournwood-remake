@@ -1,11 +1,11 @@
 # Mournwood (remake) — Progress Log
 
-> ▶ **RESUME HERE → Milestone 5 (final): meta — unlocks, the "Hunt Deepens" Ascension ladder,
-> woodcut art on every card (replace emoji), full CC0 music/SFX pass, and a polish/onboarding/Codex pass.**
-> M1–M4 are DONE, committed, pushed, live at https://bordingcode.github.io/mournwood-remake/.
-> The game is now a COMPLETE 3-region run (Wealdedge → Sloughfen → Blackheart) with 3 hunters × 5 pacts.
-> For M5: persistent meta-save (separate from the run save), unlock gates, Ascension modifiers applied at
-> makeRun, an art pipeline (per-card images w/ typographic fallback), and a keyword Codex screen.
+> ▶ **RESUME HERE → M5 polish remainder (OPTIONAL): woodcut ART on every card + enemy portraits
+> (replace emoji — e.g. free Pollinations batch like old mournwood's gen_art.py, with a typographic
+> fallback) and a fuller CC0 music/SFX pass.** Everything else is DONE.
+> M1–M4 + the M5 META LAYER (Ascension ladder, persistent record, Codex) are done, committed, pushed,
+> live at https://bordingcode.github.io/mournwood-remake/. The game is a COMPLETE, replayable roguelike:
+> 3 hunters × 5 pacts × a full 3-region descent × 6 Ascension tiers.
 
 > Resume here if the session drops. Read this + `DESIGN.md` first.
 > Location: `~/CC/mournwood-remake` · Repo: BordingCode/mournwood-remake · Live: (Pages, TBD)
@@ -69,7 +69,20 @@
   Sloughfen (fenstalker, Fen-Maw) → Blackheart (direwolf, Heart-Rot) → "THE HEART-ROT IS UNMADE" — 0 errors. SW→v5.
 - GOTCHA (re)confirmed: an old service worker serves stale modules on the same host:port during dev — test on a
   NEW port (or fully unregister+clear+double-reload). The live deploy's SW bump handles real users.
-## Milestone 5 — Meta (unlocks, Ascension, art-on-every-card, full audio, polish, Hub)  ⬜
+## Milestone 5 — Meta layer  ✅ DONE (art/audio polish = optional remainder)
+- ✅ run.js: **ASCENSIONS** ("The Hunt Deepens", 6 tiers) + `ascensionMods` (enemy HP, healing, elite/boss
+  Strength, a starting Curse, enemy Strength + less gold) — fair fixed modifiers, no rubber-banding.
+  Persistent **meta-save** (`mw_meta_v1`): runs/wins/maxAscension/bossesFelled/hunterWins. loadMeta/saveMeta.
+- ✅ Mods applied: combat scales enemy HP + grants Strength (incl. summons); camps/transitions/relic heals use
+  healMul; gold uses goldMul; Ascension IV+ seeds a Curse into the deck.
+- ✅ UI: hunter-select **Ascension stepper** (hidden until your first win; clamped to maxAscension); title +
+  win screens show a **record line**; **Codex** screen (damage types + statuses + keywords) from title AND mid-run
+  (map "?" button). Winning records the run and **unlocks the next Ascension** (shown on the victory screen).
+- ✅ Tests: 40 headless checks (added ascensionMods + applied-in-combat + curse-in-deck) + 321 map checks.
+- ✅ Browser-verified: record line, Codex (3 sections/20 entries), Ascension stepper → harder enemies (A2:
+  HP×1.15, heal×0.67), full win → unlock Deepening III recorded — 0 console errors. SW→v6.
+- ⬜ OPTIONAL remainder: woodcut card/enemy ART (replace emoji; free Pollinations batch + typographic fallback)
+  and a fuller CC0 music/SFX pass. Game is fully complete & playable without these.
 
 ## Key decisions snapshot (full detail in DESIGN.md)
 3 hunters (Houndmaster=Bond&Feed, Assassin=Combo, Tinker=Contraptions) + ~5 Pacts. Phone-first PWA,

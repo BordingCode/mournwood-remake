@@ -5,7 +5,7 @@ import { RELICS } from '../data/relics.js';
 const REGION_NAME = ['Wealdedge', 'The Sloughfen', 'The Blackheart'];
 const ROW_H = 82, PAD = 30, NODE_R = 24;
 
-export function renderMap(root, run, { onPick, onDeck }) {
+export function renderMap(root, run, { onPick, onDeck, onCodex }) {
   root.innerHTML = '';
   const wrap = document.createElement('div'); wrap.className = 'mapscreen';
 
@@ -14,9 +14,10 @@ export function renderMap(root, run, { onPick, onDeck }) {
   const relicIcons = run.player.relics.map((id) => `<span class="rel" title="${RELICS[id]?.name || id}">${RELICS[id]?.icon || '◆'}</span>`).join('');
   hud.innerHTML = `<div class="region">${REGION_NAME[run.region] || 'The Wood'}</div>
     <div class="stats"><span>❤ ${run.player.hp}/${run.player.maxHp}</span><span>🪙 ${run.player.gold}</span>
-    <span class="relics">${relicIcons || '<i>no relics</i>'}</span><button class="deckbtn">🂠 ${run.player.deck.length}</button></div>`;
+    <span class="relics">${relicIcons || '<i>no relics</i>'}</span><button class="deckbtn">🂠 ${run.player.deck.length}</button><button class="codexbtn2">?</button></div>`;
   wrap.append(hud);
   hud.querySelector('.deckbtn').onclick = () => onDeck && onDeck();
+  hud.querySelector('.codexbtn2').onclick = () => onCodex && onCodex();
 
   // map canvas
   const w = root.clientWidth || window.innerWidth || 380;
