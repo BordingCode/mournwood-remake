@@ -1,5 +1,11 @@
 # Mournwood (remake) — Progress Log
 
+> ▶ **RESUME HERE → Milestone 3: Pacts + the Assassin & Tinker hunters.**
+> M1 (core combat) and M2 (full run loop: map, economy, relics, curses, save/resume, boss)
+> are DONE, committed, pushed, and live at https://bordingcode.github.io/mournwood-remake/.
+> To continue: read DESIGN.md (§3 hunters, §Pacts) + the M3 checklist below, then build the
+> Assassin (Combo) & Tinker (Contraptions) hunters and the Hunter+Pact run-variety system.
+
 > Resume here if the session drops. Read this + `DESIGN.md` first.
 > Location: `~/CC/mournwood-remake` · Repo: BordingCode/mournwood-remake · Live: (Pages, TBD)
 > Old game (untouched, for reference/history): `~/CC/rpc` (repo BordingCode/mournwood, live /mournwood).
