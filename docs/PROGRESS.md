@@ -104,7 +104,12 @@
   palette (witchfire-green cards / bone monsters+hunters), saves transparent SVGs. **80 icons** = 57 cards + 19 enemies
   + 4 portraits, manifest-gated. CC-BY credit line in Codex. SW v8. Browser-verified on the LIVE site (phone): enemy/
   hound/hunter/card icons all render, 0 console errors. `tools/gen_art.py` (AI/Cloudflare/HF backends) kept for a
-  future painted-art swap (manifest makes per-slot replacement trivial). Title+combat BG slots still empty (optional).
+  future painted-art swap (manifest makes per-slot replacement trivial).
+- ✅ **Title + combat BACKGROUNDS done & live** (SW v9): `tools/build_backgrounds.py` composes portrait woodcut
+  scene SVGs from game-icons tree/moon silhouettes over hand-built sky/fog/horizon-glow gradients (title = green
+  evil-moon + treeline; combat = trees framing a foggy battleground + green light shafts + tombstones). Gotcha fixed:
+  a `url()` inside a CSS custom property resolves relative to the STYLESHEET (css/…) → 404; bgImage() now sets an
+  ABSOLUTE url. Overlay opacity title .92 / combat .5. **THE ENTIRE ART + AUDIO POLISH LIST IS NOW COMPLETE.**
 
 ## Key decisions snapshot (full detail in DESIGN.md)
 3 hunters (Houndmaster=Bond&Feed, Assassin=Combo, Tinker=Contraptions) + ~5 Pacts. Phone-first PWA,
