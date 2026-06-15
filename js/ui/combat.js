@@ -70,7 +70,7 @@ export class CombatScreen {
     this.toastEl = el('div', 'toast');
     this.root.append(this.toastEl, this.elEnemies, this.elAllies, this.elBar, this.elHand);
     this.root.onclick = (e) => { if (e.target === this.root) this.cancel(); };
-    bgImage(this.root, 'assets/backgrounds/combat.webp');
+    bgImage(this.root, 'assets/backgrounds/combat.svg');
   }
 
   /* ---------------- render ---------------- */

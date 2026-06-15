@@ -28,7 +28,13 @@ export function artLayer(src, fallbackHtml = '') {
 export function bgImage(elm, src) {
   if (!elm || !src || !manifest.has(src)) return;
   const img = new Image();
-  img.onload = () => { elm.style.setProperty('--bgart', `url("${src}")`); elm.classList.add('has-bgart'); };
+  img.onload = () => {
+    // Resolve to an absolute URL: a url() inside a custom property is otherwise
+    // resolved relative to the STYLESHEET (css/…), which 404s. Absolute fixes it.
+    const abs = new URL(src, document.baseURI).href;
+    elm.style.setProperty('--bgart', `url("${abs}")`);
+    elm.classList.add('has-bgart');
+  };
   img.src = src;
 }
 

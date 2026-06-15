@@ -1,4 +1,5 @@
 [
+"assets/backgrounds/combat.svg",
 "assets/cards/ambush.svg",
 "assets/cards/ashdoubt.svg",
 "assets/cards/ashenpact.svg",
@@ -78,5 +79,6 @@
 "assets/portraits/assassin.svg",
 "assets/portraits/hound.svg",
 "assets/portraits/houndmaster.svg",
-"assets/portraits/tinker.svg"
+"assets/portraits/tinker.svg",
+"assets/ui/title.svg"
 ]

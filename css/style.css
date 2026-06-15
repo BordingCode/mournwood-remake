@@ -295,8 +295,8 @@ button { font-family: inherit; cursor: pointer; }
 /* background art overlay (title + combat), dimmed behind content */
 .has-bgart::before { content: ''; position: absolute; inset: 0; z-index: 0; background-image: var(--bgart);
   background-size: cover; background-position: center; pointer-events: none; opacity: .3; }
-.screen.title.has-bgart::before { opacity: .42; }
-.combat.has-bgart::before { opacity: .2; }
+.screen.title.has-bgart::before { opacity: .92; }
+.combat.has-bgart::before { opacity: .5; }
 .screen.title > *, .combat > * { position: relative; z-index: 1; }
 
 /* attribution credit line (Codex) */

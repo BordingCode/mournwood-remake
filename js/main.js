@@ -42,7 +42,7 @@ function title() {
   s.querySelector('.newrun').onclick = () => { audio.resume(); clearSave(); chooseHunter(); };
   s.querySelector('.codexbtn').onclick = () => { audio.resume(); codexScreen(title); };
   if (saved) s.querySelector('.continue').onclick = () => { audio.resume(); run = saved; showMap(); };
-  bgImage(s, 'assets/ui/title.webp');
+  bgImage(s, 'assets/ui/title.svg');
 }
 
 /* ---------------- hunter & pact selection ---------------- */
