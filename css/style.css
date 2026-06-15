@@ -270,14 +270,15 @@ button { font-family: inherit; cursor: pointer; }
   border: 1px solid var(--witch-dim); border-radius: 8px; font-size: 15px; font-weight: 700; }
 
 /* ---------- art (manifest-gated; falls back to emoji/typography when absent) ---------- */
-.artimg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+.artimg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; display: block;
+  padding: 9%; filter: drop-shadow(0 0 5px rgba(121,224,122,.25)); }
+.card .cart .artimg { padding: 7%; }
 
 /* portrait slots: positioned, clipped boxes so woodcut art fills them cleanly */
 .enemy .por { position: relative; width: 96px; height: 96px; margin: 0 auto; overflow: hidden;
   border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 46px; }
 .hound .por, .player .por { position: relative; width: 70px; height: 70px; margin: 0 auto; overflow: hidden;
   border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 34px; }
-.enemy .por .artimg { filter: drop-shadow(0 2px 4px rgba(0,0,0,.6)); }
 
 /* card art banner + typographic monogram fallback */
 .card .cart { position: relative; height: 40px; margin: 1px 0 2px; border-radius: 7px; overflow: hidden;
@@ -297,3 +298,7 @@ button { font-family: inherit; cursor: pointer; }
 .screen.title.has-bgart::before { opacity: .42; }
 .combat.has-bgart::before { opacity: .2; }
 .screen.title > *, .combat > * { position: relative; z-index: 1; }
+
+/* attribution credit line (Codex) */
+.credits { margin: 18px auto 4px; max-width: 380px; font-size: 11px; color: var(--dim); line-height: 1.5; }
+.credits b { color: var(--witch-dim); }

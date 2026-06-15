@@ -1,27 +1,29 @@
 #!/usr/bin/env python3
-"""Generate Mournwood (remake) art from Pollinations.ai (free Flux text-to-image).
-
-House style = grim dark-fantasy WOODCUT / linocut, ash & ink, one witchfire-green
-accent — to match the remake's locked art direction. Resumable: skips files that
-already exist. Saves small WebP into ../assets/.  Run from repo root:
+"""Generate Mournwood (remake) art via a free Hugging Face public Space (Flux, no API
+key / no signup). House style = grim dark-fantasy WOODCUT / linocut, ash & ink, one
+witchfire-green accent. Resumable: skips files that already exist. Saves small WebP
+into ../assets/.  Run from repo root:
 
     python3 tools/gen_art.py
+
+Needs: pip install --break-system-packages gradio_client
 """
-import os, io, time, urllib.parse, urllib.request
+import os, io, time, shutil
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 A = os.path.join(ROOT, "assets")
 
 # Cohesive house style appended per kind.
+NOFRAME = "full bleed, fills the frame edge to edge, no text, no border, no frame, no signature, no watermark"
 CHAR_STYLE = ("grim dark-fantasy woodcut illustration, heavy black ink linocut, high-contrast "
     "engraving, ash-grey and charcoal palette, a single eerie witchfire-green glow accent, "
-    "centered subject, ominous, gnarled, painterly woodblock print, sharp focus, no text, no border")
+    "centered subject, ominous, gnarled, painterly woodblock print, sharp focus, " + NOFRAME)
 ENV_STYLE = ("grim dark-fantasy woodcut landscape, black ink linocut engraving, ash-grey and "
     "charcoal palette, eerie witchfire-green glow, atmospheric fog, dying haunted forest, "
-    "painterly woodblock print, cinematic, no text, no people in foreground")
+    "painterly woodblock print, cinematic, no people in foreground, " + NOFRAME)
 CARD_STYLE = ("grim woodcut emblem icon, black ink linocut, high contrast, ash-grey on near-black, "
     "a single witchfire-green accent, one centered object, simple dark background, "
-    "woodblock print, no text, no border, no frame")
+    "woodblock print, " + NOFRAME)
 
 ENEMIES = {
     "thornwretch":     "a hunched humanoid wretch made of thorny brambles and dead vines",
@@ -118,30 +120,48 @@ CARDS = {
 }
 
 
-# Pollinations now requires a (free) Seed-tier token. Get one at https://auth.pollinations.ai
-# (free GitHub login, no payment), then either set POLLINATIONS_TOKEN or drop the token
-# string into tools/.pollinations_token (gitignored). Rate limit on Seed = 1 req / 5s.
-MODEL = os.environ.get("POLLINATIONS_MODEL", "flux")
-def _token():
-    t = os.environ.get("POLLINATIONS_TOKEN", "").strip()
-    if t:
-        return t
-    p = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".pollinations_token")
-    if os.path.exists(p):
-        return open(p).read().strip()
-    return ""
-TOKEN = _token()
+# Two free backends. BACKEND=cf → Cloudflare Workers AI (recommended: free daily allowance,
+# best quality, no rate-limit pain). BACKEND=hf → a public Hugging Face Flux Space (truly no
+# signup, but anonymous ZeroGPU caps at ~2 images/day — needs HF_TOKEN to go further).
+BACKEND = os.environ.get("ART_BACKEND", "cf")
+HF_SPACE = os.environ.get("HF_SPACE", "KingNish/Realtime-FLUX")
+HF_TOKEN = os.environ.get("HF_TOKEN", "").strip()
+CF_TOKEN = os.environ.get("CLOUDFLARE_API_TOKEN", "").strip()
+CF_ACCT = os.environ.get("CLOUDFLARE_ACCOUNT_ID", "").strip()
+CF_MODEL = os.environ.get("CF_MODEL", "@cf/black-forest-labs/flux-1-schnell")
+
+_client = None
+def hf_client(fresh=False):
+    global _client
+    if _client is None or fresh:
+        from gradio_client import Client
+        _client = Client(HF_SPACE, hf_token=HF_TOKEN or None, verbose=False)
+    return _client
 
 
-def fetch(prompt, w, h, seed):
-    url = ("https://image.pollinations.ai/prompt/" + urllib.parse.quote(prompt)
-           + f"?width={w}&height={h}&seed={seed}&model={MODEL}&nologo=true&enhance=false")
-    headers = {"User-Agent": "Mozilla/5.0", "Referer": "https://pollinations.ai/"}
-    if TOKEN:
-        headers["Authorization"] = "Bearer " + TOKEN
-    req = urllib.request.Request(url, headers=headers)
-    time.sleep(5.5 if TOKEN else 16)  # respect Seed (5s) / anonymous (15s) rate limit
-    return urllib.request.urlopen(req, timeout=180).read()
+def produce(prompt, w, h, seed):
+    """Return a PIL.Image for the prompt using the selected free backend."""
+    from PIL import Image
+    if BACKEND == "cf":
+        import json, base64, urllib.request
+        url = f"https://api.cloudflare.com/client/v4/accounts/{CF_ACCT}/ai/run/{CF_MODEL}"
+        body = json.dumps({"prompt": prompt, "steps": 6, "seed": int(seed)}).encode()
+        req = urllib.request.Request(url, data=body, method="POST", headers={
+            "Authorization": "Bearer " + CF_TOKEN, "Content-Type": "application/json"})
+        data = urllib.request.urlopen(req, timeout=180).read()
+        d = json.loads(data)
+        if not d.get("success"):
+            raise RuntimeError(str(d.get("errors")))
+        return Image.open(io.BytesIO(base64.b64decode(d["result"]["image"]))).convert("RGB")
+    # hf
+    res = hf_client().predict(prompt=prompt, seed=float(seed), width=float(w), height=float(h),
+                              api_name="/generate_image")
+    img = res[0] if isinstance(res, (list, tuple)) else res
+    p = (img.get("path") or img.get("url")) if isinstance(img, dict) else img
+    if isinstance(p, str) and p.startswith("http"):
+        import urllib.request
+        tmp = "/tmp/_artdl"; urllib.request.urlretrieve(p, tmp); p = tmp
+    return Image.open(p).convert("RGB")
 
 
 def make(path, prompt, w, h, seed, final, q=80):
@@ -149,18 +169,21 @@ def make(path, prompt, w, h, seed, final, q=80):
     if os.path.exists(full) and os.path.getsize(full) > 2000:
         print("  skip (exists):", path); return True
     os.makedirs(os.path.dirname(full), exist_ok=True)
-    from PIL import Image
-    for attempt in range(4):
+    for attempt in range(5):
         try:
-            data = fetch(prompt, w, h, seed)
-            img = Image.open(io.BytesIO(data)).convert("RGB")
+            img = produce(prompt, w, h, seed)
             if final and img.size != final:
-                img = img.resize(final, Image.LANCZOS)
+                img = img.resize(final, __import__("PIL").Image.LANCZOS)
             img.save(full, "WEBP", quality=q, method=6)
             print(f"  ok: {path}.webp  {img.size}  {os.path.getsize(full)//1024}KB")
+            time.sleep(1)
             return True
         except Exception as e:
-            print(f"  retry {attempt+1} {path}: {e}"); time.sleep(3 + attempt * 3)
+            print(f"  retry {attempt+1} {path}: {repr(e)[:140]}")
+            time.sleep(4 + attempt * 4)
+            if BACKEND == "hf":
+                try: hf_client(fresh=True)
+                except Exception: pass
     print("  FAILED:", path); return False
 
 

@@ -33,7 +33,7 @@ export function bgImage(elm, src) {
 }
 
 // Slot path helpers (keep all callers in sync on naming).
-export const enemyArt   = (id) => `assets/enemies/${id}.webp`;
-export const cardArt    = (id) => `assets/cards/${id}.webp`;
-export const hunterArt  = (id) => `assets/portraits/${id}.webp`;
-export const houndArt    = () => `assets/portraits/hound.webp`;
+export const enemyArt   = (id) => `assets/enemies/${id}.svg`;
+export const cardArt    = (id) => `assets/cards/${id}.svg`;
+export const hunterArt  = (id) => `assets/portraits/${id}.svg`;
+export const houndArt    = () => `assets/portraits/hound.svg`;

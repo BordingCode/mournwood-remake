@@ -14,15 +14,20 @@ A = os.path.join(ROOT, "assets")
 ok = []
 for dirpath, _dirs, files in os.walk(A):
     for f in files:
-        if not f.lower().endswith(".webp"):
-            continue
+        low = f.lower()
         full = os.path.join(dirpath, f)
         rel = "assets/" + os.path.relpath(full, A).replace(os.sep, "/")
         try:
-            if os.path.getsize(full) < 2000:
-                print("  skip (too small):", rel); continue
-            Image.open(full).verify()
-            ok.append(rel)
+            if low.endswith(".svg"):
+                txt = open(full).read(400)
+                if "<svg" not in txt:
+                    print("  skip (not svg):", rel); continue
+                ok.append(rel)
+            elif low.endswith(".webp"):
+                if os.path.getsize(full) < 2000:
+                    print("  skip (too small):", rel); continue
+                Image.open(full).verify()
+                ok.append(rel)
         except Exception as e:
             print("  skip (invalid):", rel, e)
 

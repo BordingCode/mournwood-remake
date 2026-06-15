@@ -241,6 +241,7 @@ function codexScreen(back) {
     <h3 class="cdxh">Damage types (the Hunt)</h3>${tags}
     <h3 class="cdxh">Statuses</h3>${statuses}
     <h3 class="cdxh">Keywords</h3>${kw}
+    <p class="credits">Art: icons from <b>game-icons.net</b> (CC BY 3.0), recoloured for Mournwood.</p>
     <button class="big back">Back</button></div>`);
   s.querySelector('.back').onclick = () => back();
 }
