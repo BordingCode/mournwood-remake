@@ -97,11 +97,14 @@
   (Wealdedge/Sloughfen/Blackheart — distinct drone pads + sparse pentatonic motif + heartbeat pulse on the 2 dark
   regions), richer SFX (+deploy, warmer crit/hurt), fade in/out. `startMusic(region)` wired from run.region.
   Browser-verified: 6 voices, motif/pulse timers per region, all SFX fire, clean stop, 0 errors.
-- ⛔ **BLOCKED: image generation.** Pollinations is no longer free — returns HTTP 402 on every model anonymously.
-  Free path = a **free Seed-tier token** from https://auth.pollinations.ai (GitHub login, NO payment). Put the
-  token in `tools/.pollinations_token` (gitignored) or env `POLLINATIONS_TOKEN`, then run `python3 tools/gen_art.py`
-  (resumable, ~7 min at 1 req/5s) → `python3 tools/build_manifest.py` → commit assets/ + bump SW. Puter.ai also works
-  but needs an interactive login. Until a token is provided, the game ships with clean emoji/monogram fallbacks.
+- ✅ **ART DONE & LIVE (icon route, Jun 15 2026).** AI generation was a dead end (Pollinations now 402-paywalls every
+  model; HF public Flux Spaces cap anonymous at ~2 imgs/day via ZeroGPU; Cloudflare token lacks Workers-AI perm; all
+  "no-key" APIs need signup). Chose **game-icons.net** (4200+ free CC-BY silhouette icons, one cohesive style):
+  `tools/build_icons.py` maps every slot → an icon (prioritised candidate lists), strips the bg square, recolors to
+  palette (witchfire-green cards / bone monsters+hunters), saves transparent SVGs. **80 icons** = 57 cards + 19 enemies
+  + 4 portraits, manifest-gated. CC-BY credit line in Codex. SW v8. Browser-verified on the LIVE site (phone): enemy/
+  hound/hunter/card icons all render, 0 console errors. `tools/gen_art.py` (AI/Cloudflare/HF backends) kept for a
+  future painted-art swap (manifest makes per-slot replacement trivial). Title+combat BG slots still empty (optional).
 
 ## Key decisions snapshot (full detail in DESIGN.md)
 3 hunters (Houndmaster=Bond&Feed, Assassin=Combo, Tinker=Contraptions) + ~5 Pacts. Phone-first PWA,
