@@ -1,0 +1,17 @@
+<!doctype html><html><head><meta charset="utf-8"><title>artgen</title>
+<script src="https://js.puter.com/v2/"></script></head>
+<body><h1 id="s">artgen booting…</h1>
+<script>
+// Generate one image, return a PNG data URL (base64). Driven by Playwright.
+window.genImage = async function(prompt){
+  const el = await puter.ai.txt2img(prompt, false); // false = do not test mode
+  // el is an <img>; draw to canvas to get a data URL we can save.
+  await el.decode().catch(()=>{});
+  const c = document.createElement('canvas');
+  c.width = el.naturalWidth || 512; c.height = el.naturalHeight || 512;
+  c.getContext('2d').drawImage(el, 0, 0, c.width, c.height);
+  return c.toDataURL('image/png');
+};
+window.__ready = true;
+document.getElementById('s').textContent = 'artgen ready';
+</script></body></html>

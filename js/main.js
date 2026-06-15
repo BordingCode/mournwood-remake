@@ -10,6 +10,7 @@ import { HUNTERS } from './data/hunters.js';
 import { PACTS, PACT_IDS } from './data/pacts.js';
 import { STATUSES } from './engine/statuses.js';
 import { makeRng } from './engine/rng.js';
+import { loadArtManifest, artLayer, bgImage, hunterArt } from './art.js';
 
 const root = document.getElementById('app');
 const audio = new Audio();
@@ -41,6 +42,7 @@ function title() {
   s.querySelector('.newrun').onclick = () => { audio.resume(); clearSave(); chooseHunter(); };
   s.querySelector('.codexbtn').onclick = () => { audio.resume(); codexScreen(title); };
   if (saved) s.querySelector('.continue').onclick = () => { audio.resume(); run = saved; showMap(); };
+  bgImage(s, 'assets/ui/title.webp');
 }
 
 /* ---------------- hunter & pact selection ---------------- */
@@ -65,7 +67,7 @@ function chooseHunter() {
     <h2 class="seltitle">Choose your Hunter</h2>
     ${ascensionBar()}
     <div class="selcards">${order.map((id) => { const h = HUNTERS[id]; return `<button class="selcard" data-id="${id}">
-      <span class="selemoji">${h.emoji}</span><b>${h.name}</b><small>${h.tagline}</small>
+      <span class="selemoji por">${artLayer(hunterArt(id), h.emoji)}</span><b>${h.name}</b><small>${h.tagline}</small>
       <span class="selhp">❤ ${h.maxHp} HP</span></button>`; }).join('')}</div>
     <button class="ghost selback">Back</button></div>`);
   const restep = (d) => { pick.ascension += d; chooseHunter(); };
@@ -129,6 +131,8 @@ function startCombat(node) {
     hound: run.hound ? { name: run.hound.name, maxHp: run.hound.maxHp, atk: run.hound.atk } : null,
     enemyIds: ids,
     mods: run.mods || {},
+    hunterId: run.hunterId,
+    region: run.region || 0,
   }, audio, (result, combat) => {
     if (result === 'lose') { clearSave(); return gameOver(); }
     // persist hp + grown hound
@@ -242,6 +246,6 @@ function codexScreen(back) {
 }
 
 /* ---------------- boot ---------------- */
-title();
+loadArtManifest().finally(title);
 if ('serviceWorker' in navigator) addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
 window.__mw = { get run() { return run; }, screen: null, showMap, travel, title, RELICS };

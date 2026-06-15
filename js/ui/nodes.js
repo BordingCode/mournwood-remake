@@ -3,8 +3,10 @@ import { CARDS, instantiate, canUpgrade } from '../data/cards.js';
 import { HUNTERS } from '../data/hunters.js';
 import { RELICS, RELIC_POOL } from '../data/relics.js';
 import { makeRng } from '../engine/rng.js';
+import { artLayer, cardArt } from '../art.js';
 
 const PRICE = { card: 48, relic: 130, remove: 55 };
+const monogram = (name) => `<span class="mono">${(name || '?').trim()[0] || '?'}</span>`;
 function screen(root, cls, html) { root.innerHTML = ''; const s = document.createElement('div'); s.className = 'screen node ' + cls; s.innerHTML = html; root.append(s); return s; }
 function rngFor(run, salt) { return makeRng(run.seed + run.cleared.length * 1000 + salt); }
 function poolFor(run) { return run.cardPool || HUNTERS[run.hunterId].pool; }
@@ -14,7 +16,9 @@ export function cardHtml(spec, extra = '') {
   const up = spec.endsWith('+'); const c = CARDS[up ? spec.slice(0, -1) : spec];
   const t = up && c.up ? { ...c, ...c.up } : c;
   return `<div class="card type-${c.type}" data-spec="${spec}">
-    <div class="cost">${t.cost}</div><div class="cname">${c.name}${up ? '+' : ''}</div>
+    <div class="cost">${t.cost}</div>
+    <div class="cart">${artLayer(cardArt(c.id), monogram(c.name))}</div>
+    <div class="cname">${c.name}${up ? '+' : ''}</div>
     <div class="ctype">${c.type}${c.tag ? ' · ' + c.tag : ''}</div><div class="ctext">${t.text}</div>${extra}</div>`;
 }
 function relicHtml(id, extra = '') { const r = RELICS[id]; return `<div class="relictile" data-id="${id}"><span class="ric">${r.icon}</span><b>${r.name}</b><small>${r.desc}</small>${extra}</div>`; }

@@ -84,6 +84,25 @@
 - ⬜ OPTIONAL remainder: woodcut card/enemy ART (replace emoji; free Pollinations batch + typographic fallback)
   and a fuller CC0 music/SFX pass. Game is fully complete & playable without these.
 
+## Art + audio polish pass (Jun 15 2026)  🔧 in progress
+- ✅ **Art pipeline built & wired** (manifest-gated, ships safe with partial art):
+  - `js/art.js` — manifest loader + `artLayer()` (img layered over emoji/monogram fallback) + `bgImage()`.
+  - Wired EVERY slot: enemy portraits, hound, hunter portrait (combat + select), **card art on all 57 cards**
+    (typographic monogram fallback), + title & combat **background** overlays. SW→v7 (added js/art.js).
+  - `tools/gen_art.py` (grim WOODCUT + witchfire-green prompts for 19 enemies, 3 hunters+hound, 2 envs, 57 cards
+    = ~81 images; resumable, WebP) + `tools/build_manifest.py` (PIL-validated allow-list).
+  - Browser-verified the FALLBACK path at 390×844: card monograms render, slots sized/clipped, 0 console errors.
+    (emoji portraits blank on Linux Chromium only — fine on iOS/Android; woodcut art fills those boxes once generated.)
+- ✅ **Audio pass done** (`js/ui/audio.js`): reverb + soft compressor bus; **region-themed music beds**
+  (Wealdedge/Sloughfen/Blackheart — distinct drone pads + sparse pentatonic motif + heartbeat pulse on the 2 dark
+  regions), richer SFX (+deploy, warmer crit/hurt), fade in/out. `startMusic(region)` wired from run.region.
+  Browser-verified: 6 voices, motif/pulse timers per region, all SFX fire, clean stop, 0 errors.
+- ⛔ **BLOCKED: image generation.** Pollinations is no longer free — returns HTTP 402 on every model anonymously.
+  Free path = a **free Seed-tier token** from https://auth.pollinations.ai (GitHub login, NO payment). Put the
+  token in `tools/.pollinations_token` (gitignored) or env `POLLINATIONS_TOKEN`, then run `python3 tools/gen_art.py`
+  (resumable, ~7 min at 1 req/5s) → `python3 tools/build_manifest.py` → commit assets/ + bump SW. Puter.ai also works
+  but needs an interactive login. Until a token is provided, the game ships with clean emoji/monogram fallbacks.
+
 ## Key decisions snapshot (full detail in DESIGN.md)
 3 hunters (Houndmaster=Bond&Feed, Assassin=Combo, Tinker=Contraptions) + ~5 Pacts. Phone-first PWA,
 vanilla JS, no build. Combat: 3 energy, draw 5, block resets, telegraphed intents, visible monster

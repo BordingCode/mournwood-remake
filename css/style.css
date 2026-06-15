@@ -268,3 +268,32 @@ button { font-family: inherit; cursor: pointer; }
 /* mid-run codex button */
 .codexbtn2 { margin-left: 6px; width: 30px; height: 30px; background: #1b2417; color: var(--witch);
   border: 1px solid var(--witch-dim); border-radius: 8px; font-size: 15px; font-weight: 700; }
+
+/* ---------- art (manifest-gated; falls back to emoji/typography when absent) ---------- */
+.artimg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+
+/* portrait slots: positioned, clipped boxes so woodcut art fills them cleanly */
+.enemy .por { position: relative; width: 96px; height: 96px; margin: 0 auto; overflow: hidden;
+  border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 46px; }
+.hound .por, .player .por { position: relative; width: 70px; height: 70px; margin: 0 auto; overflow: hidden;
+  border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 34px; }
+.enemy .por .artimg { filter: drop-shadow(0 2px 4px rgba(0,0,0,.6)); }
+
+/* card art banner + typographic monogram fallback */
+.card .cart { position: relative; height: 40px; margin: 1px 0 2px; border-radius: 7px; overflow: hidden;
+  display: flex; align-items: center; justify-content: center; border: 1px solid var(--line);
+  background: radial-gradient(circle at 50% 38%, #1c2616, #0e1209); }
+.card .cart .mono { font-size: 24px; font-weight: 800; color: var(--witch-dim); opacity: .85;
+  font-family: 'Iowan Old Style', Georgia, serif; }
+.card .ctext { font-size: 10.5px; line-height: 1.3; }
+
+/* hunter-select portrait */
+.selcard .selemoji.por { position: relative; width: 56px; height: 56px; overflow: hidden; border-radius: 10px;
+  display: inline-flex; align-items: center; justify-content: center; font-size: 34px; }
+
+/* background art overlay (title + combat), dimmed behind content */
+.has-bgart::before { content: ''; position: absolute; inset: 0; z-index: 0; background-image: var(--bgart);
+  background-size: cover; background-position: center; pointer-events: none; opacity: .3; }
+.screen.title.has-bgart::before { opacity: .42; }
+.combat.has-bgart::before { opacity: .2; }
+.screen.title > *, .combat > * { position: relative; z-index: 1; }

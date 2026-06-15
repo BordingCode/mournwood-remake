@@ -2,20 +2,24 @@
 // tap-to-target, tap-to-inspect. Builds the Combat with juice hooks bound here.
 import { Combat } from '../engine/combat.js';
 import { STATUSES } from '../engine/statuses.js';
+import { artLayer, bgImage, enemyArt, cardArt, hunterArt, houndArt } from '../art.js';
 
 const TAG = { bleed: { i: '🩸', n: 'Bleed' }, fire: { i: '🔥', n: 'Fire' }, blunt: { i: '🔨', n: 'Blunt' }, beast: { i: '🐾', n: 'Beast' }, machine: { i: '⚙️', n: 'Machine' } };
 const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
+const monogram = (name) => `<span class="mono">${(name || '?').trim()[0] || '?'}</span>`;
 
 export class CombatScreen {
   constructor(root, params, audio, onEnd) {
     this.root = root; this.audio = audio; this.onEnd = onEnd;
+    this.hunterId = params.hunterId || 'houndmaster';
+    this.region = params.region || 0;
     this.selected = null; this.targeting = false;
     this.enemyEls = new Map();
     this.combat = new Combat({ ...params, hooks: this._hooks() });
     this._build();
     this.combat.start();
     this.render();
-    audio.startMusic();
+    audio.startMusic(this.region);
   }
 
   _hooks() {
@@ -39,7 +43,7 @@ export class CombatScreen {
       onHoundGrow: ({ fed }) => { this.audio.growl(); if (this.houndEl) { this.pulse(this.houndEl); this.float(this.houndEl, fed ? 'FED' : '+1', 'flt heal'); } },
       onHoundDown: () => { this.audio.hurt(); this.shakeScreen(); },
       onHoundRevive: () => { this.audio.growl(); },
-      onDeploy: ({ c }) => { this.audio.growl(); this.toast(`${c.icon} ${c.name} deployed — it acts every turn.`, 1800); },
+      onDeploy: ({ c }) => { this.audio.deploy(); this.toast(`${c.icon} ${c.name} deployed — it acts every turn.`, 1800); },
       onContraption: ({ c }) => { const node = this.contraptionEls && this.contraptionEls.get(c); if (node) this.pulse(node); },
       onBossPhase: ({ line }) => this.toast(line, 2600),
       onEnd: ({ result }) => { this.audio.fanfare(result === 'win'); setTimeout(() => this.showEnd(result), 700); },
@@ -66,6 +70,7 @@ export class CombatScreen {
     this.toastEl = el('div', 'toast');
     this.root.append(this.toastEl, this.elEnemies, this.elAllies, this.elBar, this.elHand);
     this.root.onclick = (e) => { if (e.target === this.root) this.cancel(); };
+    bgImage(this.root, 'assets/backgrounds/combat.webp');
   }
 
   /* ---------------- render ---------------- */
@@ -87,7 +92,7 @@ export class CombatScreen {
     this.elAllies.innerHTML = '';
     if (s.hound) {
       this.houndEl = el('div', 'hound' + (s.hound.alive ? '' : ' downed'));
-      this.houndEl.innerHTML = `<div class="por">🐕</div><div class="meta"><b>${s.hound.name}</b>
+      this.houndEl.innerHTML = `<div class="por">${artLayer(houndArt(), '🐕')}</div><div class="meta"><b>${s.hound.name}</b>
         <span class="atk">⚔ ${s.hound.atk}</span>${this._bar(s.hound.hp, s.hound.maxHp, 'hp')}
         ${s.hound.alive ? '' : '<span class="downtag">DOWNED</span>'}</div>`;
       this.houndEl.onclick = (e) => { e.stopPropagation(); this.toast('Hound — strikes at end of turn. ⚔ is its attack. Feed it to grow it; Mend revives it.', 2800); };
@@ -107,7 +112,7 @@ export class CombatScreen {
 
     this.playerEl = el('div', 'player');
     const p = s.player;
-    this.playerEl.innerHTML = `<div class="por">🏹</div><div class="meta"><b>Hunter</b>
+    this.playerEl.innerHTML = `<div class="por">${artLayer(hunterArt(this.hunterId), '🏹')}</div><div class="meta"><b>Hunter</b>
       ${p.block > 0 ? `<span class="blk">🛡 ${p.block}</span>` : ''}
       ${this._bar(p.hp, p.maxHp, 'hp')}${this._statusRow(p.statuses)}</div>`;
     this.elAllies.append(this.playerEl);
@@ -124,7 +129,9 @@ export class CombatScreen {
     s.hand.forEach((c) => {
       const playable = !c.unplayable && c.cost <= p.energy && !s.over;
       const card = el('div', `card type-${c.type}${playable ? '' : ' unplayable'}${this.selected === c.uid ? ' selected' : ''}`);
-      card.innerHTML = `<div class="cost">${c.cost}</div><div class="cname">${c.name}</div>
+      card.innerHTML = `<div class="cost">${c.cost}</div>
+        <div class="cart">${artLayer(cardArt(c.id), monogram(c.name))}</div>
+        <div class="cname">${c.name}</div>
         <div class="ctype">${c.type}${c.tag ? ` · ${TAG[c.tag]?.i || ''}` : ''}</div>
         <div class="ctext">${c.text}</div>`;
       card.onclick = (ev) => { ev.stopPropagation(); this.tapCard(c); };
@@ -146,7 +153,7 @@ export class CombatScreen {
     const itClass = (it.type === 'attack' || it.type === 'maul' || it.type === 'charge') ? 'atk'
       : it.type === 'block' ? 'def' : it.type === 'buff' ? 'buf' : it.type === 'debuff' ? 'deb' : 'neu';
     return `<div class="intent i-${itClass}">${intentText}</div>
-      <div class="por">${en.emoji}</div>
+      <div class="por">${artLayer(enemyArt(en.id), en.emoji)}</div>
       <div class="ename">${en.name}${en.elite ? ' ★' : ''}${en.boss ? ' 👑' : ''}</div>
       ${en.block > 0 ? `<span class="blk">🛡 ${en.block}</span>` : ''}
       ${this._bar(en.hp, en.maxHp, 'hp foe')}
