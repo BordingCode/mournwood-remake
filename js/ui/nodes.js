@@ -23,15 +23,57 @@ export function cardHtml(spec, extra = '') {
 }
 function relicHtml(id, extra = '') { const r = RELICS[id]; return `<div class="relictile" data-id="${id}"><span class="ric">${r.icon}</span><b>${r.name}</b><small>${r.desc}</small>${extra}</div>`; }
 
+/* ---------------- rarity (drives reward weighting so runs get standout pulls) ---------------- */
+// Anything not listed is COMMON. Uncommon = solid pool staples; Rare = build-defining payoffs.
+const RARITY = {
+  // Houndmaster
+  packbond: 'uncommon', frenzy: 'uncommon', snare: 'uncommon', gut: 'rare', gorge: 'rare',
+  // Assassin
+  twinfang: 'uncommon', whirl: 'uncommon', pierce: 'uncommon', momentum: 'uncommon',
+  assassinate: 'rare', coupdegrace: 'rare', exsang: 'rare', shadowstep: 'rare',
+  // Tinker
+  deploybellows: 'uncommon', deployneedler: 'uncommon', reinforce: 'uncommon', piston: 'uncommon',
+  megacannon: 'rare', overdrive: 'rare', scrapblast: 'rare', overclock: 'rare',
+  // Pact cards
+  fester: 'rare', bramblemail: 'uncommon', ironcrush: 'uncommon', frenzystrike: 'uncommon',
+  moonrise: 'uncommon', immolate: 'rare', ashenpact: 'rare', ambush: 'rare', mistveil: 'uncommon',
+};
+const RARITY_OF = (spec) => RARITY[typeof spec === 'string' && spec.endsWith('+') ? spec.slice(0, -1) : spec] || 'common';
+const RARITY_WEIGHT = { common: 65, uncommon: 30, rare: 5 };
+// Draw n distinct cards from the pool, biased by rarity (~65/30/5 common/uncommon/rare).
+function weightedDraw(rng, pool, n) {
+  const bag = pool.slice();
+  const out = [];
+  for (let k = 0; k < n && bag.length; k++) {
+    const total = bag.reduce((s, id) => s + (RARITY_WEIGHT[RARITY_OF(id)] || 1), 0);
+    let r = rng.next() * total, idx = bag.length - 1;
+    for (let i = 0; i < bag.length; i++) { if ((r -= (RARITY_WEIGHT[RARITY_OF(bag[i])] || 1)) < 0) { idx = i; break; } }
+    out.push(bag.splice(idx, 1)[0]);
+  }
+  return out;
+}
+
 /* ---------------- card reward ---------------- */
 export function rewardScreen(root, run, audio, onDone) {
   const rng = rngFor(run, 7);
-  const picks = rng.shuffle(poolFor(run).slice()).slice(0, 3);
+  const picks = weightedDraw(rng, poolFor(run).slice(), 3);
   const s = screen(root, 'reward', `<h2>Spoils of the Hunt</h2><p class="sub">Choose a card for your pack.</p>
     <div class="cardrow">${picks.map((id) => cardHtml(id)).join('')}</div>
     <button class="ghost skip">Skip (stay lean)</button>`);
   s.querySelectorAll('.card').forEach((elc) => elc.onclick = () => { run.player.deck.push(elc.dataset.spec); audio.card(); onDone(); });
   s.querySelector('.skip').onclick = () => onDone();
+}
+
+/* ---------------- relic choice (elite / great-beast / cache spoils) ---------------- */
+// Pick 1 of up to 3 unowned relics. Falls through (auto-grants / skips) if fewer than 1 remain.
+export function relicChoiceScreen(root, run, audio, onDone, salt = 41, heading = 'A Relic of the Hunt') {
+  const rng = rngFor(run, salt);
+  const offered = unownedRelics(run, rng, 3);
+  if (offered.length === 0) { onDone(); return; }
+  if (offered.length === 1) { run.player.relics.push(offered[0]); onDone(); return; }
+  const s = screen(root, 'reward relicreward', `<h2>${heading}</h2><p class="sub">Claim one — the rest stay buried.</p>
+    <div class="relicrow">${offered.map((id) => relicHtml(id)).join('')}</div>`);
+  s.querySelectorAll('.relictile').forEach((elc) => elc.onclick = () => { run.player.relics.push(elc.dataset.id); audio.card(); onDone(); });
 }
 
 /* ---------------- camp / rest ---------------- */
@@ -130,15 +172,15 @@ export function eventScreen(root, run, audio, onDone) {
 export function cacheScreen(root, run, audio, onDone) {
   const rng = rngFor(run, 31);
   const opts = [];
-  const relic = unownedRelics(run, rng, 1)[0];
-  if (relic) opts.push({ kind: 'relic', id: relic, label: RELICS[relic].name, desc: RELICS[relic].desc, icon: RELICS[relic].icon });
+  const hasRelic = unownedRelics(run, rng, 1).length > 0;
+  if (hasRelic) opts.push({ kind: 'relic', label: 'A relic', desc: 'Pick one of three buried treasures.', icon: '🏺' });
   opts.push({ kind: 'gold', amt: 40, label: '40 teeth', desc: 'Cold, hard currency.', icon: '🪙' });
   opts.push({ kind: 'card', label: 'A card', desc: 'Take one of the hunt’s tools.', icon: '🂠' });
   const s = screen(root, 'cache', `<h2>📦 A Cache</h2><p class="sub">A cache half-buried in the loam. Take one:</p>
     <div class="cacheopts">${opts.map((o, i) => `<button class="cacheopt" data-i="${i}"><span class="cic">${o.icon}</span><b>${o.label}</b><small>${o.desc}</small></button>`).join('')}</div>`);
   s.querySelectorAll('.cacheopt').forEach((b) => b.onclick = () => {
     const o = opts[+b.dataset.i]; audio.card();
-    if (o.kind === 'relic') { run.player.relics.push(o.id); onDone(); }
+    if (o.kind === 'relic') relicChoiceScreen(root, run, audio, onDone, 31, '📦 The Cache');
     else if (o.kind === 'gold') { run.player.gold += o.amt; onDone(); }
     else rewardScreen(root, run, audio, onDone);
   });

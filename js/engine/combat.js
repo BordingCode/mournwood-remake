@@ -19,6 +19,7 @@ export class Combat {
     this.over = false;
     this.result = null;
     this.cardsThisTurn = 0;
+    this.lastPlayerHit = null;   // { from, move, hpBefore } — for the death screen's cause-of-death
 
     this.player = {
       isPlayer: true, name: player.name || 'Hunter',
@@ -276,9 +277,9 @@ export class Combat {
 
   tickDot(e) {
     const b = amt(e, 'bleed');
-    if (b > 0) { this.applyDamage(e, b, null); addStatus(e, 'bleed', -1); this.h.onDamage({ target: e, amount: b, dot: 'bleed' }); }
+    if (b > 0) { if (e.isPlayer) this.lastPlayerHit = { from: 'the wood', move: 'bleed', hpBefore: this.player.hp }; this.applyDamage(e, b, null); addStatus(e, 'bleed', -1); this.h.onDamage({ target: e, amount: b, dot: 'bleed' }); }
     const p = amt(e, 'poison');
-    if (p > 0) { this.applyDamage(e, p, null); addStatus(e, 'poison', -1); this.h.onDamage({ target: e, amount: p, dot: 'poison' }); }
+    if (p > 0) { if (e.isPlayer) this.lastPlayerHit = { from: 'the rot', move: 'poison', hpBefore: this.player.hp }; this.applyDamage(e, p, null); addStatus(e, 'poison', -1); this.h.onDamage({ target: e, amount: p, dot: 'poison' }); }
     const r = amt(e, 'regen');
     if (r > 0) { this.heal(e, r); addStatus(e, 'regen', -1); }
   }
@@ -305,6 +306,7 @@ export class Combat {
     let d = base + amt(e, 'strength');
     if (has(e, 'weak')) d = Math.floor(d * 0.75);
     d = Math.max(0, d);
+    if (target.isPlayer) this.lastPlayerHit = { from: e.name, move: e.intent?.moveId || null, hpBefore: this.player.hp };
     const dealt = this.applyDamage(target, d, e, { attack: true });
     this.h.onDamage({ target, amount: dealt, attacker: e });
     // Thorns (Iron Pact): the player retaliates when struck.

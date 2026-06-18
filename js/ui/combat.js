@@ -140,13 +140,22 @@ export class CombatScreen {
     this.btnEnd.disabled = s.over;
   }
 
+  // The number an attack/charge intent will ACTUALLY hit for, computed exactly like the
+  // engine's enemyHit(): base + the enemy's Strength, then ×0.75 (floored) if it's Weak.
+  // (Mirrors engine/combat.js so telegraphs never lie — Strength/ramp/Ascension foes included.)
+  _displayHit(en, base) {
+    let d = base + (en.statuses?.strength || 0);
+    if (en.statuses?.weak > 0) d = Math.floor(d * 0.75);
+    return Math.max(0, d);
+  }
+
   _enemyHtml(en) {
     const it = en.intent || {};
     let intentText = '';
-    if (it.type === 'attack' || it.type === 'maul') intentText = `${it.icon} ${it.amount}${it.times > 1 ? `×${it.times}` : ''}${it.type === 'maul' ? ' 🐾' : ''}`;
+    if (it.type === 'attack' || it.type === 'maul') intentText = `${it.icon} ${this._displayHit(en, it.amount)}${it.times > 1 ? `×${it.times}` : ''}${it.type === 'maul' ? ' 🐾' : ''}`;
     else if (it.type === 'block') intentText = `${it.icon} ${it.amount}`;
     else if (it.type === 'buff' || it.type === 'debuff') intentText = `${it.icon} ${STATUSES[it.status]?.icon || ''}`;
-    else if (it.type === 'charge') intentText = `${it.icon} ${it.amount}!`;
+    else if (it.type === 'charge') intentText = `${it.icon} ${this._displayHit(en, it.amount)}!`;
     else intentText = it.icon || '❔';
     const weak = en.weakTo ? `<span class="weak">${TAG[en.weakTo]?.i || ''} weak: ${TAG[en.weakTo]?.n || en.weakTo}</span>` : '';
     const armor = en.armor > 0 ? `<span class="armor">🛡${en.armor} armor</span>` : '';
@@ -183,9 +192,9 @@ export class CombatScreen {
     const e = this.combat.enemies.find((x) => x.uid === uid); if (!e) return;
     const it = e.intent || {};
     let msg = `${e.name}: `;
-    if (it.type === 'attack' || it.type === 'maul') msg += `about to attack for ${it.amount}${it.times > 1 ? ` ×${it.times}` : ''}${it.type === 'maul' ? ' (at your Hound!)' : ''}.`;
+    if (it.type === 'attack' || it.type === 'maul') msg += `about to attack for ${this._displayHit(e, it.amount)}${it.times > 1 ? ` ×${it.times}` : ''}${it.type === 'maul' ? ' (at your Hound!)' : ''}.`;
     else if (it.type === 'block') msg += `about to gain ${it.amount} Block.`;
-    else if (it.type === 'charge') msg += `winding up a ${it.amount} hit — brace next turn!`;
+    else if (it.type === 'charge') msg += `winding up a ${this._displayHit(e, it.amount)} hit — brace next turn!`;
     else if (it.type === 'buff' || it.type === 'debuff') msg += `about to ${it.type} (${STATUSES[it.status]?.name || ''}).`;
     else msg += 'preparing.';
     if (e.weakTo) msg += ` Weak to ${TAG[e.weakTo]?.n || e.weakTo} (+50%).`;

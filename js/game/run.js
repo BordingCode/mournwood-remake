@@ -89,7 +89,7 @@ export function makeRun({ hunterId = 'houndmaster', pactId = null, region = 0, a
   const deck = h.startDeck.slice();
   for (let i = 0; i < mods.startCurses; i++) deck.push('ashdoubt'); // Ascension IV+: a curse in the pack
   return {
-    seed: s, hunterId, pactId, region, ascension, mods,
+    seed: s, hunterId, pactId, region, ascension, mods, beastsFelled: 0,
     player: { name: h.name, maxHp: h.maxHp, hp: h.maxHp, gold: 50, deck, relics: startRelics },
     hound: h.hound ? { name: h.hound.name, maxHp: h.hound.maxHp, atk: h.hound.atk } : null,
     cardPool, relicPool,

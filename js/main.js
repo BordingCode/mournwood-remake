@@ -3,9 +3,9 @@
 import { CombatScreen } from './ui/combat.js';
 import { Audio } from './ui/audio.js';
 import { renderMap } from './ui/map.js';
-import { rewardScreen, campScreen, shopScreen, eventScreen, cacheScreen, deckOverlay } from './ui/nodes.js';
+import { rewardScreen, campScreen, shopScreen, eventScreen, cacheScreen, deckOverlay, relicChoiceScreen } from './ui/nodes.js';
 import { makeRun, loadRun, saveRun, clearSave, enemyIdsFor, reachable, advanceRegion, REGIONS, REGION_COUNT, ASCENSIONS, loadMeta, saveMeta, NODE } from './game/run.js';
-import { RELICS, RELIC_POOL } from './data/relics.js';
+import { RELICS } from './data/relics.js';
 import { HUNTERS } from './data/hunters.js';
 import { PACTS, PACT_IDS } from './data/pacts.js';
 import { STATUSES } from './engine/statuses.js';
@@ -17,7 +17,6 @@ const audio = new Audio();
 let run = null;
 
 function screen(cls, html) { root.innerHTML = ''; const s = document.createElement('div'); s.className = 'screen ' + cls; s.innerHTML = html; root.append(s); return s; }
-const grantRelic = (rng) => { const pool = (run.relicPool || RELIC_POOL).filter((id) => !run.player.relics.includes(id)); if (!pool.length) return null; const id = rng.pick(pool); run.player.relics.push(id); return id; };
 
 /* ---------------- title ---------------- */
 function title() {
@@ -134,7 +133,9 @@ function startCombat(node) {
     hunterId: run.hunterId,
     region: run.region || 0,
   }, audio, (result, combat) => {
-    if (result === 'lose') { clearSave(); return gameOver(); }
+    if (result === 'lose') { clearSave(); return gameOver(combat); }
+    // tally beasts felled this run (for the death/victory reflection line)
+    run.beastsFelled = (run.beastsFelled || 0) + combat.enemies.filter((e) => e.hp <= 0).length;
     // persist hp + grown hound
     run.player.hp = combat.player.hp;
     if (run.hound && combat.hound) { run.hound.maxHp = combat.hound.maxHp; run.hound.atk = combat.hound.atk; }
@@ -144,21 +145,16 @@ function startCombat(node) {
     if (node.type === NODE.hunt) gold += 18;
     gold = Math.round(gold * (run.mods?.goldMul ?? 1));
     run.player.gold += gold;
-    // relics from elites / hunts
-    let gotRelic = null;
-    if (node.type === NODE.elite || node.type === NODE.hunt) gotRelic = grantRelic(rng);
     // post-combat heals (e.g. Bloodstone)
     run.player.relics.forEach((id) => { const h = RELICS[id]?.postCombatHeal; if (h) run.player.hp = Math.min(run.player.maxHp, run.player.hp + Math.ceil(h * (run.mods?.healMul ?? 1))); });
     saveRun(run);
     if (node.type === NODE.boss) return (run.region >= REGION_COUNT - 1) ? victory() : regionTransition();
-    if (gotRelic) toastThen(`Relic claimed: ${RELICS[gotRelic].icon} ${RELICS[gotRelic].name} (+${gold} teeth)`, () => rewardScreen(root, run, audio, afterNode));
-    else rewardScreen(root, run, audio, afterNode);
+    // Elites & Hunts grant a relic — but you PICK 1 of 3, then take the card spoils.
+    if (node.type === NODE.elite || node.type === NODE.hunt) {
+      return relicChoiceScreen(root, run, audio, () => { saveRun(run); rewardScreen(root, run, audio, afterNode); }, 41, `Spoils of a Great Hunt (+${gold} teeth)`);
+    }
+    rewardScreen(root, run, audio, afterNode);
   });
-}
-
-function toastThen(msg, next) {
-  const s = screen('node toastscreen', `<div class="toastbig">${msg}</div><button class="big2 go">Take your spoils</button>`);
-  s.querySelector('.go').onclick = next;
 }
 
 /* ---------------- between regions ---------------- */
@@ -169,19 +165,20 @@ const REGION_INTRO = [
 ];
 function regionTransition() {
   audio.fanfare(true);
+  // A great-beast's relic: PICK 1 of 3 (before advancing — relic offers key off run.cleared).
+  relicChoiceScreen(root, run, audio, () => regionTransitionPanel(), 99, '👑 The Great-Beast Falls — claim its relic');
+}
+function regionTransitionPanel() {
   const next = run.region + 1;
   const heal = Math.ceil(run.player.maxHp * 0.4 * (run.mods?.healMul ?? 1));
   run.player.hp = Math.min(run.player.maxHp, run.player.hp + heal);
-  // a relic for felling a great-beast
-  const rng = makeRng(run.seed + run.region * 313 + 99);
-  const gotRelic = grantRelic(rng);
   advanceRegion(run); saveRun(run);
   const r = REGIONS[next];
   const s = screen('node regiontrans', `<div class="titlewrap">
     <div class="logo small">${r.name}</div>
     <p class="sub">${r.sub}</p>
     <p class="blurb">${REGION_INTRO[next] || ''}</p>
-    <p class="m1note">You bind your wounds (+${heal} HP)${gotRelic ? ` and claim ${RELICS[gotRelic].icon} ${RELICS[gotRelic].name}` : ''}.</p>
+    <p class="m1note">You bind your wounds (+${heal} HP).</p>
     <button class="big go">Descend ▾</button></div>`);
   s.querySelector('.go').onclick = () => showMap();
 }
@@ -206,13 +203,33 @@ function victory() {
     <button class="big newrun">Hunt again</button></div>`);
   s.querySelector('.newrun').onclick = () => title();
 }
-function gameOver() {
+function gameOver(combat) {
   audio.stopMusic();
+  // (a) cause of death — what landed the killing blow, and at what HP you stood
+  const hit = combat && combat.lastPlayerHit;
+  const cause = hit
+    ? `Felled by <b>${hit.from}</b>${hit.move ? `'s ${hit.move}` : ''} — you stood at ${hit.hpBefore} HP.`
+    : 'The dark took you before you saw what struck.';
+  // (b) run reflection — how far you got, how many beasts you put down
+  const regionName = (REGIONS[run.region] || REGIONS[0]).name;
+  const felled = run.beastsFelled || 0;
+  const reflect = `Reached <b>${regionName}</b> · ${felled} ${felled === 1 ? 'beast' : 'beasts'} felled.`;
+  // (c) Hunt again — re-roll the SAME hunter + pact + ascension straight into a new run
+  const again = { hunterId: run.hunterId, pactId: run.pactId, ascension: run.ascension || 0 };
+  const ascName = ASCENSIONS[Math.min(again.ascension, ASCENSIONS.length - 1)].name;
   const s = screen('over lose', `<div class="titlewrap">
     <div class="logo small" style="color:#ff6b6b">THE WOOD TAKES YOU</div>
-    <p class="blurb">Your hunt ends in the dark. The wood always wins, in the end.</p>
-    <button class="big newrun">Begin a new hunt</button></div>`);
-  s.querySelector('.newrun').onclick = () => title();
+    <p class="blurb">${cause}</p>
+    <p class="record">${reflect}</p>
+    <button class="big newrun">Hunt again — ${HUNTERS[again.hunterId].name}${again.pactId ? ` · ${PACTS[again.pactId].name}` : ''}${again.ascension ? ` · ${ascName}` : ''}</button>
+    <button class="big ghostbig changehunter">Change your hunt</button></div>`);
+  s.querySelector('.newrun').onclick = () => {
+    audio.resume(); clearSave();
+    run = makeRun(again);
+    const m = loadMeta(); m.runs++; saveMeta(m);
+    saveRun(run); showMap();
+  };
+  s.querySelector('.changehunter').onclick = () => { pick = { ascension: again.ascension }; chooseHunter(); };
 }
 
 /* ---------------- codex (learn the hunt) ---------------- */
