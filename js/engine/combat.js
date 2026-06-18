@@ -237,8 +237,13 @@ export class Combat {
     let d = base + amt(attacker, 'strength');
     if (has(attacker, 'weak')) d = Math.floor(d * 0.75);
     if (has(target, 'vulnerable')) d = Math.floor(d * 1.5);
-    // The Hunt: matching a monster's weakness deals +50%.
-    if (opts.tag && target.weakTo && opts.tag === target.weakTo) d = Math.floor(d * 1.5);
+    // The Hunt, step 1 — WEAKNESS: matching a monster's weakness tag deals +50%.
+    const matchesWeak = opts.tag && target.weakTo && opts.tag === target.weakTo;
+    if (matchesWeak) d = Math.floor(d * 1.5);
+    // The Hunt, step 2 — WARD: a warded beast shrugs off everything but its weakness
+    // until you EXPOSE it. Hitting its weakness always lands (and bypasses the ward);
+    // any other tag is halved while it is still warded and not yet Exposed.
+    if (target.warded && !has(target, 'expose') && !matchesWeak) d = Math.floor(d * 0.5);
     if (attacker === this.player) d = this.relicMod('modAttack', d, opts);
     return Math.max(0, Math.round(d));
   }
@@ -334,7 +339,7 @@ export class Combat {
       player: { hp: this.player.hp, maxHp: this.player.maxHp, block: this.player.block, energy: this.player.energy, maxEnergy: this.maxEnergy, statuses: { ...this.player.statuses } },
       hound: this.hound ? { name: this.hound.name, hp: this.hound.hp, maxHp: this.hound.maxHp, atk: this.hound.atk, alive: this.hound.alive } : null,
       contraptions: this.contraptions.map((c) => ({ dep: c.dep, name: c.name, icon: c.icon, kind: c.kind, value: c.value })),
-      enemies: this.enemies.map((e) => ({ uid: e.uid, id: e.id, name: e.name, emoji: e.emoji, hp: e.hp, maxHp: e.maxHp, block: e.block, armor: e.armor || 0, weakTo: e.weakTo, statuses: { ...e.statuses }, intent: e.intent, boss: !!e.boss, elite: !!e.elite })),
+      enemies: this.enemies.map((e) => ({ uid: e.uid, id: e.id, name: e.name, emoji: e.emoji, hp: e.hp, maxHp: e.maxHp, block: e.block, armor: e.armor || 0, weakTo: e.weakTo, warded: !!e.warded, statuses: { ...e.statuses }, intent: e.intent, boss: !!e.boss, elite: !!e.elite })),
       hand: this.hand.map((c) => ({ uid: c.uid, id: c.id, name: c.name, cost: c.cost, type: c.type, target: c.target, tag: c.tag, text: c.text, exhaust: c.exhaust })),
       piles: { draw: this.drawPile.length, discard: this.discardPile.length, exhaust: this.exhaustPile.length },
     };

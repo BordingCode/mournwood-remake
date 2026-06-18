@@ -241,7 +241,7 @@ const TAG_INFO = [
   ['⚙️', 'Machine', 'The Tinker’s contraptions. Tireless, mechanical damage.'],
 ];
 const KEYWORDS = [
-  ['The Hunt', 'Every monster shows a WEAKNESS (a damage type) — hit it with a matching card for +50% damage. Some show ARMOR, which softens each hit until you Break it.'],
+  ['The Hunt', 'Every monster shows a WEAKNESS (a damage type) — hit it with a matching card for +50% damage. Some show ARMOR, which softens each hit until you Break it. WARDED beasts (elites & great-beasts) shrug off every tag but their weakness — until you EXPOSE them, then any tag lands full.'],
   ['Bond & Feed (Houndmaster)', 'Feed cards & HP to grow your Hound into a monster. It strikes on its own — but losing it is a real setback.'],
   ['Combo (Assassin)', 'Every card you play builds a combo this turn. Finishers scale with how many cards you’ve chained — sequence matters.'],
   ['Contraptions (Tinker)', 'Deploy devices that act on their OWN at the start of every turn. Build a self-running machine.'],

@@ -64,6 +64,8 @@ button { font-family: inherit; cursor: pointer; }
 .traits { display: flex; flex-direction: column; gap: 2px; margin-top: 3px; }
 .weak { color: var(--witch); font-size: 10.5px; }
 .armor { color: #9ec5ff; font-size: 10.5px; }
+.ward { color: #d9a8ff; font-size: 10.5px; font-weight: 600; }
+.ward.broken { color: #ffd66e; }
 
 .allies { flex: 0 0 auto; display: flex; gap: 12px; align-items: flex-end; justify-content: center; padding: 4px 10px 10px; }
 .hound, .player { width: 150px; padding: 8px; border-radius: 12px; text-align: center;
@@ -170,6 +172,9 @@ button { font-family: inherit; cursor: pointer; }
 .mapnode.t-elite { color: var(--gold); } .mapnode.t-boss { width: 64px; height: 64px; font-size: 30px; color: var(--blood); border-color: #7a2a24; }
 .mapnode.t-rest { color: #ff9a5a; } .mapnode.t-shop { color: #9ec5ff; } .mapnode.t-hunt { color: var(--blood); } .mapnode.t-cache { color: var(--gold); }
 .maplabel { position: absolute; transform: translateX(-50%); font-size: 10px; color: var(--dim); white-space: nowrap; }
+.maplabel.preview { display: flex; flex-direction: column; align-items: center; text-align: center; max-width: 132px; white-space: normal; line-height: 1.2; }
+.maplabel.preview b { color: var(--bone); font-size: 10px; }
+.maplabel.preview .pv { color: var(--dim); font-size: 9px; }
 
 /* node screens */
 .screen.node { align-items: center; justify-content: flex-start; padding: 24px 16px 40px; overflow-y: auto;

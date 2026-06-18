@@ -1,5 +1,5 @@
 // Offline cache. Bump CACHE on every deploy so browsers fetch fresh files.
-const CACHE = 'mournwood-remake-v10';
+const CACHE = 'mournwood-remake-v11';
 const ASSETS = [
   './', './index.html', './manifest.json', './icon.svg', './css/style.css',
   './js/main.js', './js/art.js',

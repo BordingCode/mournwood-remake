@@ -39,7 +39,7 @@ export const ENEMIES = {
 
   // ---- elite ----
   hollowstag: {
-    id: 'hollowstag', name: 'The Hollow Stag', emoji: '🦌', elite: true, hp: [78, 90],
+    id: 'hollowstag', name: 'The Hollow Stag', emoji: '🦌', elite: true, hp: [78, 90], armor: 3,
     weakTo: 'bleed',
     moves: [
       { id: 'gore', type: 'attack', amount: 14, weight: 4 },
@@ -79,8 +79,8 @@ export const ENEMIES = {
     ],
   },
   drowned: {
-    id: 'drowned', name: 'The Drowned', emoji: '🌊', hp: [40, 48],
-    weakTo: 'blunt',
+    id: 'drowned', name: 'The Drowned', emoji: '🌊', hp: [40, 48], warded: true,
+    weakTo: 'blunt', // bloated & water-logged: Expose it (or hit blunt) to land full hits
     moves: [
       { id: 'lunge', type: 'attack', amount: 12, weight: 5 },
       { id: 'wail', type: 'debuff', status: 'vulnerable', amount: 2, weight: 2 },
@@ -97,7 +97,7 @@ export const ENEMIES = {
     ],
   },
   fenstalker: {
-    id: 'fenstalker', name: 'Fenstalker', emoji: '🦎', hp: [42, 50],
+    id: 'fenstalker', name: 'Fenstalker', emoji: '🦎', hp: [42, 50], armor: 2,
     weakTo: 'bleed',
     moves: [
       { id: 'ambush', type: 'attack', amount: 12, weight: 4 },
@@ -111,8 +111,8 @@ export const ENEMIES = {
   },
   // Sloughfen elite
   mirewidow: {
-    id: 'mirewidow', name: 'The Mire Widow', emoji: '🕸️', elite: true, hp: [98, 112],
-    weakTo: 'fire',
+    id: 'mirewidow', name: 'The Mire Widow', emoji: '🕸️', elite: true, hp: [98, 112], warded: true,
+    weakTo: 'fire', // shrouded in web: Expose her (or bring fire) before your other tags bite
     moves: [
       { id: 'bite', type: 'attack', amount: 16, weight: 4 },
       { id: 'venom', type: 'debuff', status: 'poison', amount: 4, weight: 3 },
@@ -129,11 +129,11 @@ export const ENEMIES = {
         { id: 'drown', type: 'debuff', status: 'poison', amount: 3, weight: 3 },
         { id: 'sink', type: 'block', amount: 16, weight: 2 },
         { id: 'creep', type: 'ramp', amount: 1, weight: 2 } ] },
-      { weakTo: 'blunt', enterBlock: 18, line: 'You sink deeper. The mud is patient.', moves: [
+      { weakTo: 'blunt', warded: true, enterBlock: 18, line: 'You sink deeper. The mud is patient. Its hide turns your blows.', moves: [
         { id: 'crush', type: 'attack', amount: 12, times: 2, weight: 4 },
         { id: 'swallow', type: 'charge', amount: 34, releaseId: 'disgorge', weight: 3 },
         { id: 'miasma', type: 'debuff', status: 'poison', amount: 4, weight: 2 } ] },
-      { weakTo: 'bleed', enterStrength: 4, line: 'IT WILL NOT LET GO.', moves: [
+      { weakTo: 'bleed', warded: false, enterStrength: 4, line: 'IT WILL NOT LET GO.', moves: [
         { id: 'frenzy', type: 'attack', amount: 9, times: 3, weight: 4 },
         { id: 'maw', type: 'attack', amount: 22, weight: 3 } ] },
     ],
@@ -141,7 +141,7 @@ export const ENEMIES = {
 
   // ============ REGION 3 — The Blackheart (the corrupted inner wood: dread & ruin) ============
   gloomspawn: {
-    id: 'gloomspawn', name: 'Gloomspawn', emoji: '👁️', hp: [44, 52],
+    id: 'gloomspawn', name: 'Gloomspawn', emoji: '👁️', hp: [44, 52], armor: 2,
     weakTo: 'fire',
     moves: [
       { id: 'claw', type: 'attack', amount: 13, weight: 5 },
@@ -159,7 +159,7 @@ export const ENEMIES = {
     ],
   },
   thornhorror: {
-    id: 'thornhorror', name: 'Thorn Horror', emoji: '🥀', hp: [52, 62], armor: 2,
+    id: 'thornhorror', name: 'Thorn Horror', emoji: '🥀', hp: [52, 62], armor: 3,
     weakTo: 'fire',
     moves: [
       { id: 'lash', type: 'attack', amount: 14, weight: 5 },
@@ -169,7 +169,7 @@ export const ENEMIES = {
     ],
   },
   direwolf: {
-    id: 'direwolf', name: 'Direwolf', emoji: '🐺', hp: [48, 56],
+    id: 'direwolf', name: 'Direwolf', emoji: '🐺', hp: [48, 56], armor: 3,
     weakTo: 'bleed',
     moves: [
       { id: 'rend', type: 'attack', amount: 8, times: 2, weight: 4 },
@@ -179,8 +179,8 @@ export const ENEMIES = {
   },
   // Blackheart elite
   antleredpenance: {
-    id: 'antleredpenance', name: 'The Antlered Penance', emoji: '🦌', elite: true, hp: [126, 142],
-    weakTo: 'bleed',
+    id: 'antleredpenance', name: 'The Antlered Penance', emoji: '🦌', elite: true, hp: [126, 142], warded: true,
+    weakTo: 'bleed', // cloaked in penitent iron: Expose it (or draw blood) to land full hits
     moves: [
       { id: 'gore', type: 'attack', amount: 18, weight: 4 },
       { id: 'wrath', type: 'buff', status: 'strength', amount: 4, weight: 2 },
@@ -197,11 +197,11 @@ export const ENEMIES = {
         { id: 'spread', type: 'debuff', status: 'poison', amount: 4, weight: 3 },
         { id: 'harden', type: 'block', amount: 20, weight: 2 },
         { id: 'creep', type: 'ramp', amount: 1, weight: 2 } ] },
-      { weakTo: 'fire', enterStrength: 3, line: 'You are already part of me. You always were.', moves: [
+      { weakTo: 'fire', warded: true, enterStrength: 3, line: 'You are already part of me. You always were. Your blades find nothing.', moves: [
         { id: 'wither', type: 'attack', amount: 12, times: 2, weight: 4 },
         { id: 'despair', type: 'debuff', status: 'weak', amount: 4, weight: 2 },
         { id: 'consume', type: 'charge', amount: 38, releaseId: 'devour', weight: 3 } ] },
-      { weakTo: 'bleed', enterStrength: 6, line: 'THEN WE END TOGETHER.', moves: [
+      { weakTo: 'bleed', warded: false, enterStrength: 6, line: 'THEN WE END TOGETHER.', moves: [
         { id: 'cataclysm', type: 'charge', amount: 44, releaseId: 'unmake', weight: 4 },
         { id: 'flurry', type: 'attack', amount: 10, times: 3, weight: 3 },
         { id: 'rendall', type: 'attack', amount: 14, times: 2, weight: 3 } ] },
@@ -222,6 +222,7 @@ export function makeEnemy(rng, id) {
     maxHp, hp: maxHp, block: 0, statuses: {}, def, history: [], intent: null,
     boss: !!def.boss, elite: !!def.elite, phase: 0,
     armor: def.armor || 0, weakTo: ph0.weakTo || null,
+    warded: !!(def.boss ? ph0.warded : def.warded),
     moves: def.boss ? def.phases[0].moves : def.moves,
   };
   rollIntent(rng, e);
@@ -260,6 +261,7 @@ export function advanceBoss(rng, e) {
     const ph = e.def.phases[target];
     e.moves = ph.moves; e.history = []; e.forcedNext = null;
     if (ph.weakTo !== undefined) e.weakTo = ph.weakTo; // boss weakness shifts between phases
+    if (ph.warded !== undefined) e.warded = !!ph.warded; // a phase can raise/drop its ward
     if (ph.enterBlock) e.block += ph.enterBlock;
     if (ph.enterStrength) e.statuses.strength = (e.statuses.strength || 0) + ph.enterStrength;
     rollIntent(rng, e);

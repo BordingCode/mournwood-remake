@@ -159,6 +159,8 @@ export class CombatScreen {
     else intentText = it.icon || '❔';
     const weak = en.weakTo ? `<span class="weak">${TAG[en.weakTo]?.i || ''} weak: ${TAG[en.weakTo]?.n || en.weakTo}</span>` : '';
     const armor = en.armor > 0 ? `<span class="armor">🛡${en.armor} armor</span>` : '';
+    const exposed = (en.statuses?.expose || 0) > 0;
+    const ward = en.warded ? `<span class="ward${exposed ? ' broken' : ''}">${exposed ? '🔆 exposed' : '🛡️‍ warded'}</span>` : '';
     const itClass = (it.type === 'attack' || it.type === 'maul' || it.type === 'charge') ? 'atk'
       : it.type === 'block' ? 'def' : it.type === 'buff' ? 'buf' : it.type === 'debuff' ? 'deb' : 'neu';
     return `<div class="intent i-${itClass}">${intentText}</div>
@@ -166,7 +168,7 @@ export class CombatScreen {
       <div class="ename">${en.name}${en.elite ? ' ★' : ''}${en.boss ? ' 👑' : ''}</div>
       ${en.block > 0 ? `<span class="blk">🛡 ${en.block}</span>` : ''}
       ${this._bar(en.hp, en.maxHp, 'hp foe')}
-      <div class="traits">${weak}${armor}</div>
+      <div class="traits">${weak}${armor}${ward}</div>
       ${this._statusRow(en.statuses)}`;
   }
 
@@ -199,6 +201,9 @@ export class CombatScreen {
     else msg += 'preparing.';
     if (e.weakTo) msg += ` Weak to ${TAG[e.weakTo]?.n || e.weakTo} (+50%).`;
     if (e.armor > 0) msg += ` Armor ${e.armor} (Break it).`;
+    if (e.warded) msg += (e.statuses?.expose > 0)
+      ? ` Exposed — full damage from every tag right now.`
+      : ` Warded — only ${TAG[e.weakTo]?.n || e.weakTo} hits land fully; other tags are halved until you Expose it.`;
     this.toast(msg, 3000);
   }
   cancel() { this.selected = null; this.targeting = false; }

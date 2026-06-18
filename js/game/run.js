@@ -3,6 +3,7 @@ import { makeRng } from '../engine/rng.js';
 import { HUNTERS } from '../data/hunters.js';
 import { PACTS } from '../data/pacts.js';
 import { RELIC_POOL } from '../data/relics.js';
+import { ENEMIES } from '../data/enemies.js';
 
 const W = 4, H = 11, PATHS = 6;        // map width, content rows, number of random-walk paths
 const SAVE_KEY = 'mw_save_v1';
@@ -131,6 +132,51 @@ export function enemyIdsFor(run, node) {
   const count = node.r <= 2 ? 1 : node.r <= 6 ? (rng.chance(0.35) ? 2 : 1) : 2;
   const out = []; for (let i = 0; i < count; i++) out.push(rng.pick(R.pool));
   return out;
+}
+
+// A one-line risk/reward preview for a node, so routing is a real choice (P4: previewed paths).
+// Deterministic — combat previews reuse the same seeded enemyIdsFor, so the preview never lies.
+const TRAIT_WORD = { fire: 'fire', bleed: 'bleed', blunt: 'blunt', beast: 'beast', machine: 'machine' };
+export function nodePreview(run, node) {
+  if (!node) return '';
+  switch (node.type) {
+    case NODE.rest: return 'safe · heal or upgrade a card';
+    case NODE.shop: return 'safe · spend gold on cards, relics & removal';
+    case NODE.event: return 'unknown · an Omen — a story choice';
+    case NODE.cache: return 'safe · a small stash of gold or loot';
+    case NODE.boss: return 'great-beast · the region falls if it does';
+    case NODE.elite: {
+      const e = ENEMIES[(REGIONS[run.region] || REGIONS[0]).elite];
+      const flags = [];
+      if (e?.warded) flags.push('warded — Expose it');
+      else if (e?.weakTo) flags.push('weak: ' + (TRAIT_WORD[e.weakTo] || e.weakTo));
+      if (e?.armor) flags.push('armoured — Break it');
+      return 'tough · drops a relic' + (flags.length ? ' · ' + flags.join(', ') : '');
+    }
+    case NODE.hunt: {
+      const ids = enemyIdsFor(run, node);
+      const note = ids.length > 1 ? 'high-risk ambush' : 'a tracked beast';
+      const tags = enemyTagNote(ids);
+      return note + ' · richer spoils' + (tags ? ' · ' + tags : '');
+    }
+    case NODE.combat:
+    default: {
+      const ids = enemyIdsFor(run, node);
+      const lead = ids.length > 1 ? `${ids.length} beasts` : 'a beast';
+      const tags = enemyTagNote(ids);
+      return lead + (tags ? ' · ' + tags : '');
+    }
+  }
+}
+// Summarise the standout Hunt traits of a set of enemies (weakness / armour / ward).
+function enemyTagNote(ids) {
+  let warded = false, armoured = false; const weaks = new Set();
+  for (const id of ids) { const e = ENEMIES[id]; if (!e) continue; if (e.warded) warded = true; if (e.armor) armoured = true; if (e.weakTo) weaks.add(TRAIT_WORD[e.weakTo] || e.weakTo); }
+  const bits = [];
+  if (weaks.size) bits.push('weak: ' + [...weaks].join('/'));
+  if (armoured) bits.push('armoured');
+  if (warded) bits.push('warded');
+  return bits.join(', ');
 }
 
 // Descend to the next region: fresh map, same hunter/deck/relics/hp carry over.

@@ -16,6 +16,8 @@ export const STATUSES = {
                 desc: 'Loses X HP at the start of its turn, then X drops by 1. (the Worm Pact)' },
   thorns:     { name: 'Thorns',     icon: '🌵', kind: 'buff',
                 desc: 'When struck, deals X back to the attacker. (the Iron Pact)' },
+  expose:     { name: 'Expose',     icon: '🔆', kind: 'debuff', decays: true,
+                desc: 'A WARDED beast shrugs off any tag but its weakness — until Exposed. While Exposed it takes full damage from every tag. -1 each turn.' },
 };
 
 export const amt = (e, id) => (e && e.statuses && e.statuses[id]) || 0;

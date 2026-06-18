@@ -1,5 +1,5 @@
 // Headless map-generation checks. Run: node test/map.test.mjs
-import { generateMap } from '../js/game/run.js';
+import { generateMap, nodePreview, makeRun, REGIONS } from '../js/game/run.js';
 import { makeRng } from '../js/engine/rng.js';
 
 let pass = 0, fail = 0;
@@ -22,6 +22,26 @@ for (let s = 0; s < 40; s++) {
   ok('top content row all rest (camp before boss)', ns.filter((n) => n.r === map.rows - 1).every((n) => n.type === 'rest'));
   ok('has at least one shop', ns.some((n) => n.type === 'shop'));
   ok('has a hunt node', ns.some((n) => n.type === 'hunt'));
+}
+
+// node previews: every reachable node gets a non-empty, deterministic one-liner.
+{
+  const run = makeRun({ hunterId: 'houndmaster', pactId: 'moon', region: 0, seed: 7 });
+  let allPreviewed = true, deterministic = true;
+  for (const n of Object.values(run.map.nodes)) {
+    const p1 = nodePreview(run, n), p2 = nodePreview(run, n);
+    if (!p1) allPreviewed = false;
+    if (p1 !== p2) deterministic = false;
+  }
+  ok('every node has a preview line', allPreviewed);
+  ok('node preview is deterministic', deterministic);
+  const elite = Object.values(run.map.nodes).find((n) => n.type === 'elite');
+  if (elite) ok('elite preview mentions the relic drop', /relic/.test(nodePreview(run, elite)));
+  ok('boss preview mentions the great-beast', /great-beast/.test(nodePreview(run, run.map.nodes.boss)));
+  // a warded region-2 elite surfaces "Expose" in its preview
+  const r2 = makeRun({ hunterId: 'assassin', region: 1, seed: 3 });
+  const e2 = Object.values(r2.map.nodes).find((n) => n.type === 'elite');
+  if (e2 && REGIONS[1].elite === 'mirewidow') ok('warded elite preview says Expose', /Expose/.test(nodePreview(r2, e2)));
 }
 
 // determinism

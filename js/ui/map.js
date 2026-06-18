@@ -1,5 +1,5 @@
 // Branching node-map screen. Descend top→bottom; tap a reachable node to travel. SVG edges.
-import { reachable, NODE_META } from '../game/run.js';
+import { reachable, NODE_META, nodePreview } from '../game/run.js';
 import { RELICS } from '../data/relics.js';
 
 const REGION_NAME = ['Wealdedge', 'The Sloughfen', 'The Blackheart'];
@@ -58,12 +58,17 @@ export function renderMap(root, run, { onPick, onDeck, onCodex }) {
     b.style.left = (xOf(n.c) - NODE_R) + 'px';
     b.style.top = (yOf(n.r) - NODE_R) + 'px';
     b.innerHTML = `<span class="ic">${meta.icon}</span>`;
-    b.title = meta.label;
+    const preview = isReach ? nodePreview(run, n) : '';
+    b.title = preview ? `${meta.label} — ${preview}` : meta.label;
     if (isReach) b.onclick = () => onPick(n);
     else b.disabled = true;
     board.append(b);
-    // label under boss / special
-    if (n.type === 'boss' || n.type === 'hunt' || n.type === 'shop' || n.type === 'rest') {
+    // label under boss / special — reachable nodes also get a one-line risk/reward preview
+    if (isReach) {
+      const lab = document.createElement('div'); lab.className = 'maplabel preview';
+      lab.style.left = xOf(n.c) + 'px'; lab.style.top = (yOf(n.r) + NODE_R + 1) + 'px';
+      lab.innerHTML = `<b>${meta.label}</b><span class="pv">${preview}</span>`; board.append(lab);
+    } else if (n.type === 'boss' || n.type === 'hunt' || n.type === 'shop' || n.type === 'rest') {
       const lab = document.createElement('div'); lab.className = 'maplabel';
       lab.style.left = xOf(n.c) + 'px'; lab.style.top = (yOf(n.r) + NODE_R + 1) + 'px';
       lab.textContent = meta.label; board.append(lab);

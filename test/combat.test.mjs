@@ -41,6 +41,35 @@ function newCombat(enemyIds, seed = 1) {
   ok('no armor after break (full 10)', e.hp === hp1 - 10);
 }
 
+// 2b. Ward (Expose): a warded foe halves non-matching tags until Exposed; its weakness always lands.
+{
+  const c = newCombat(['mireling']);
+  const e = c.enemies[0];
+  e.warded = true; e.weakTo = 'fire'; e.armor = 0;
+  ok('warded halves a wrong tag (10 -> 5)', c.computeDamage(c.player, e, 10, { tag: 'blunt' }) === 5);
+  ok('warded does NOT halve the weakness tag (10 -> 15)', c.computeDamage(c.player, e, 10, { tag: 'fire' }) === 15);
+  addStatus(e, 'expose', 2);
+  ok('Exposed: wrong tag now lands full (10)', c.computeDamage(c.player, e, 10, { tag: 'blunt' }) === 10);
+  ok('Exposed: weakness still +50% (15)', c.computeDamage(c.player, e, 10, { tag: 'fire' }) === 15);
+  addStatus(e, 'expose', -2);
+  ok('expose wears off -> halved again', c.computeDamage(c.player, e, 10, { tag: 'blunt' }) === 5);
+}
+
+// 2c. A status op can apply Expose to a target.
+{
+  const c = newCombat(['mireling']);
+  const e = c.enemies[0];
+  c.runOp({ k: 'status', status: 'expose', amount: 2 }, { tag: 'x' }, e);
+  ok('expose applies via status op', amt(e, 'expose') === 2);
+}
+
+// 2d. Boss phases can raise then drop a ward (Fen-Maw: p2 warded, p3 not).
+{
+  const c = newCombat(['fenmaw']);
+  const e = c.enemies[0];
+  ok('Fen-Maw phase 1 is not warded', e.warded === false);
+}
+
 // 3. Gut detonates Bleed: damage = 2 × target bleed.
 {
   const c = newCombat(['mireling']);
